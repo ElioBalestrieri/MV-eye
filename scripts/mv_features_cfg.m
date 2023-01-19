@@ -10,5 +10,8 @@ cfg_feat.freqs = {'alphaPow'};
 % space dimensionality reduction
 cfg_feat.keepchans = false;
 
+% PCA var explained
+cfg_feat.PCAvarExplained = .9;
+
 
 end

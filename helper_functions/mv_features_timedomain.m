@@ -1,4 +1,4 @@
-function dat = mv_features_timedomain(cfg_feats, dat)
+function F = mv_features_timedomain(cfg_feats, dat, F)
 
 % quick input check
 if ~isfield(cfg_feats, 'time')
@@ -15,10 +15,6 @@ end
 nchans = length(dat.label);
 ntrials = length(dat.trial);
 
-% initialize Features structure
-F = struct();
-F.mv = double.empty(ntrials, 0);
-
 % initiate switch loop for features
 for ifeat = cfg_feats.time
 
@@ -26,19 +22,32 @@ for ifeat = cfg_feats.time
 
         case 'SAMPEN' % SAMPle ENtropy     
 
-            F.sampen = zeros(ntrials, nchans);
+            sampen = zeros(ntrials, nchans);
             for itrl = 1:ntrials
-                F.sampen(itrl, :) = SampEnMat(2, .2, ...
+                sampen(itrl, :) = SampEnMat(2, .2, ...
                     zscore(dat.trial{itrl}, [], 2));    
             end
 
-            if ~cfg_feats.keepchans
+            [~, PCAscore, ~, ~, EXPLAINED] = pca(sampen);
+            keepcomps = (cumsum(EXPLAINED)/100) <= cfg_feats.PCAvarExplained;
 
-                % [F.mv(:, end+1), w] = local_PCA(F.sampen);
-                [~, PCAscore] = pca(F.sampen);
-                F.temp = PCAscore(:, 1:3);
+            F.single_feats.sampen = PCAscore(:, keepcomps);
+             
+            % only first component for multifeats
+            F.multi_feats(:, end+1) = PCAscore(:, 1);
 
+            % single parcels (or chans) 
+            if isempty(F.single_parcels)
+                % create a subfield of the dat structure storing features 
+                F.single_parcels = mat2cell(sampen, ntrials, ones(nchans, 1));
+            else
+                for iparc = 1:length(F.single_parcels)
+                    F.single_parcels{iparc} = [F.single_parcels{iparc}, sampen(:,iparc)];
+                end
             end
+
+
+
 
         otherwise
             error('"%s" is not recognized as feature', ifeat{1})
@@ -46,8 +55,6 @@ for ifeat = cfg_feats.time
     end
 
 end
-
-dat.F = F;
 
 end
 

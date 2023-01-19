@@ -10,11 +10,13 @@ fieldtrip_path = '~/toolboxes/fieldtrip-20221223';
 data_path = '../DATA/';
 entropy_functions_path = '../../Software/mMSE-master';
 helper_functions = '../helper_functions/';
+beta_functions = '../beta_functions';
 
 addpath(software_path)
 addpath(helper_functions)
 addpath(entropy_functions_path)
 addpath(fieldtrip_path)
+addpath(beta_functions)
 ft_defaults
 
 % load sample dataset
@@ -29,15 +31,31 @@ dat = ft_appenddata(cfg, dat{1}, dat{2});
 % call for config
 cfg_feats = mv_features_cfg();
 
+%% Feature structure
+ntrials = length(dat.trial);
+
+F.single_parcels = [];
+F.single_feats = [];
+F.multi_feats = double.empty(ntrials, 0);
+
+%% periodic & aperiodic
+
+F = mv_periodic_aperiodic(cfg_feats, dat, F);
+
+
 %% compute features
 
-dat = mv_features_timedomain(cfg_feats, dat);
+F = mv_features_timedomain(cfg_feats, dat, F);
+
+
 
 %% first test
 
-Mdl = fitcsvm(dat.F.sampen,Y,'KernelFunction','gaussian','KernelScale',...
-              3.7,'BoxConstraint',1,'KFold',10);
-acc =1-kfoldLoss(Mdl);
+tbl_classifiers = mv_multitest(F, Y);
+
+
+
+
 
 %% continue from here >
 
@@ -124,3 +142,81 @@ acc =1-kfoldLoss(Mdl);
 % TS_TopFeatures()
 % 
 % 
+
+
+
+% %% freq
+% 
+% cfg=[];
+% cfg.method='mtmfft';
+% cfg.taper='dpss';
+% cfg.output='pow';
+% cfg.keeptrials='yes';
+% cfg.tapsmofrq=1;
+% cfg.foilim=[0.25 45];%avoid 0 for 1/f fit
+% freq=ft_freqanalysis(cfg,dat);
+% 
+% 
+% %% descriptives
+% 
+% % important note 1
+% % below 1 Hz, the spectrum did not seem linear (after the log log
+% % transform). For better linear fit, I include freqs from 1 Hz on.
+% maskAbove1Hz = freq.freq>=1;
+% chan = 17; % R IPS, out of sympathy
+% 
+% OneCortexParc = squeeze(freq.powspctrm(:, chan, :));
+% avg_spctr = mean(OneCortexParc);
+% 
+% randtrl = squeeze(OneCortexParc(randi(217), :));
+% 
+% figure; 
+% subplot(1, 2, 1, 'XScale', 'log', 'YScale', 'log'); hold on;
+% loglog(freq.freq, avg_spctr, 'LineWidth',2)
+% loglog(freq.freq(maskAbove1Hz), avg_spctr(maskAbove1Hz), 'LineWidth',2)
+% title('Average (R IPS)', 'FontSize',13)
+% 
+% subplot(1, 2, 2, 'XScale', 'log', 'YScale', 'log'); hold on;
+% loglog(freq.freq, randtrl, 'LineWidth',2)
+% loglog(freq.freq(maskAbove1Hz), randtrl(maskAbove1Hz), 'LineWidth',2)
+% title('Single trials (R IPS)', 'FontSize',13)
+% 
+% 
+% %%
+% freqmap = freq.freq(1:end-2);
+% spctrmap = logspctr(1:end-2);
+% dx1_spectra = diff(logspctr); dx1_spectra = dx1_spectra(1:end-1);
+% dx2_spectra = diff(logspctr, 2);
+% 
+% %% crit 1:
+% 
+% krnlpeak = linspace(-1, 1, 5); % sin(linspace(-pi, pi, 5)); %
+% test = conv(dx1_spectra, krnlpeak, 'same');
+% 
+% 
+% 
+% map = test>0;
+% 
+% Krnl = gausswin(5);
+% mask = conv(map, Krnl, 'same')>=(sum(Krnl));
+% 
+% figure; hold on;
+% plot(freqmap, test)
+% plot(freqmap, mask)
+% 
+% %% fooof
+% 
+% tic
+% cfg               = [];
+% cfg.foilim        = [1 45];
+% cfg.pad           = 4;
+% cfg.tapsmofrq     = 2;
+% cfg.method        = 'mtmfft';
+% cfg.output        = 'fooof_aperiodic';
+% fractal = ft_freqanalysis(cfg, dat);
+% toc
+% 
+% 
+% %%
+% 
+
