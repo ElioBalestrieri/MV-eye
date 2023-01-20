@@ -13,6 +13,12 @@ cfg.foilim = [1 45];% avoid <1 Hz for 1/f fit
 cfg.pad = 'nextpow2';
 freq = ft_freqanalysis(cfg,dat);
 
+%% fooof-based feature extraction
+
+% start logging time from here: likely, the initial chunk of the
+% timefrequency computation will be common to othe features as well...
+tic
+
 % fooof computation, while keeping same cfg
 cfg.output = 'fooof_aperiodic';
 cfg.keeptrials = 'no';
@@ -45,6 +51,10 @@ F.single_feats.spctr_fooof = rotdat(:, keepcomps);
 
 % only first component for multifeats
 F.multi_feats(:, end+1) = rotdat(:, 1);
+
+% log runtime
+F.runtime.spctr_fooof = round(toc, 2);
+
 
 
 end

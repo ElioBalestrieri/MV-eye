@@ -134,5 +134,10 @@ dmypy.json
 *.fig
 # data files
 *.mat
+
+# plotting templates and atlases (at least for the time being)
+*.nii
+*.gii
+
 # temp code files 
 *.asv

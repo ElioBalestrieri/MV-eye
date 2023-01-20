@@ -1,17 +1,24 @@
-function cfg_feat = mv_features_cfg()
+function cfg_feats = mv_features_cfg()
 % cfg definition for MV features
 
 % time domain
-cfg_feat.time = {'SAMPEN'};
+cfg_feats.time = {'mean','median','std','SAMPEN', 'wpH'};
 
 % frequency domain
-cfg_feat.freqs = {'alphaPow'};
-
-% space dimensionality reduction
-cfg_feat.keepchans = false;
+cfg_feats.freqs = {'alphaPow'}; % placeholder, currently this field isnot used.
 
 % PCA var explained
-cfg_feat.PCAvarExplained = .9;
+cfg_feats.PCAvarExplained = .9;
+
+% classifiers compared
+cfg_feats.classifiers = {'SVM', 'LDA', 'NaiveBayes'};
+cfg_feats.kFoldNum = 10;
+
+% choose only one classifier to be trained on all (360!) parcels
+cfg_feats.parcelClass = 'SVM';
+
+% verbosity
+cfg_feats.verbose = true; 
 
 
 end

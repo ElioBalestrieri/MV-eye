@@ -5,18 +5,20 @@ clc
 
 %% path definition
 
-software_path = '../../Software/biosig-master/biosig/t300_FeatureExtraction';
-fieldtrip_path = '~/toolboxes/fieldtrip-20221223';
-data_path = '../DATA/';
-entropy_functions_path = '../../Software/mMSE-master';
-helper_functions = '../helper_functions/';
-beta_functions = '../beta_functions';
+software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction';
+fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
+data_path               = '../DATA/';
+entropy_functions_path  = '../../Software/mMSE-master';
+helper_functions_path   = '../helper_functions/';
+beta_functions_path     = '../beta_functions';
+plotting_functions_path = '../plotting_functions';
+resources_path          = '../../Resources';
 
-addpath(software_path)
-addpath(helper_functions)
-addpath(entropy_functions_path)
-addpath(fieldtrip_path)
-addpath(beta_functions)
+
+addpath(software_path); addpath(helper_functions_path)
+addpath(beta_functions_path); addpath(entropy_functions_path)
+addpath(plotting_functions_path); addpath(resources_path)
+addpath(fieldtrip_path); 
 ft_defaults
 
 % load sample dataset
@@ -31,30 +33,45 @@ dat = ft_appenddata(cfg, dat{1}, dat{2});
 % call for config
 cfg_feats = mv_features_cfg();
 
-%% Feature structure
+%% initialize Feature structure
 ntrials = length(dat.trial);
 
 F.single_parcels = [];
 F.single_feats = [];
 F.multi_feats = double.empty(ntrials, 0);
 
+%% compute time features
+
+F = mv_features_timedomain(cfg_feats, dat, F);
+
 %% periodic & aperiodic
 
 F = mv_periodic_aperiodic(cfg_feats, dat, F);
 
+%% classifiers table comparison
 
-%% compute features
+tbl_classifiers = mv_features_compare(cfg_feats, F, Y);
 
-F = mv_features_timedomain(cfg_feats, dat, F);
+%% spatial dist classification accuracy
 
+parc_acc = mv_classify_parcels(cfg_feats, F, Y);
 
+%% plots
 
-%% first test
+% plot accuracy over parcellated brain
+atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
+atlas.data = zeros(1,64984);
+filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
+sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
 
-tbl_classifiers = mv_multitest(F, Y);
+for ilab=1:length(atlas.indexmaxlabel)
+    tmp_roiidx=find(atlas.indexmax==ilab);   
+    atlas.data(tmp_roiidx)=parc_acc.accuracy(ilab);
+end
 
-
-
+figure()
+plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
+                  'accuracy',[-90,0],[90,0],'SVM accuracy', [.5, 1]);
 
 
 %% continue from here >
