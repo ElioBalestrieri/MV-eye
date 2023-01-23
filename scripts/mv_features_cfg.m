@@ -2,10 +2,10 @@ function cfg_feats = mv_features_cfg()
 % cfg definition for MV features
 
 % time domain
-cfg_feats.time = {'mean','median','std','SAMPEN', 'wpH'};
+cfg_feats.time = {'mean','median','std'}; %,'SAMPEN', 'wpH'};
 
 % frequency domain
-cfg_feats.freqs = {'alphaPow'}; % placeholder, currently this field isnot used.
+cfg_feats.freq = {'covFFT'}; % placeholder, currently this field isnot used.
 
 % PCA var explained
 cfg_feats.PCAvarExplained = .9;
