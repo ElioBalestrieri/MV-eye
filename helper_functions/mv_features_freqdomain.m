@@ -68,10 +68,10 @@ for ifeat = cfg_feats.freq
 
     end
 
-    % reduce from parcels to PC
-    F.single_feats.(this_feat) = local_PCA(TEMP, cfg_feats);
+    % store mat with features
+    F.single_feats.(this_feat) = TEMP;
     % add to F structure
-    F = local_add_feature(F, F.single_feats.(this_feat), TEMP, ntrials, ...
+    F = local_add_feature(F, TEMP, ntrials, ...
                           nchans, this_feat);
     % log runtime
     F.runtime.(this_feat) = round(toc, 2);
@@ -82,23 +82,7 @@ end
 
 %% ########################### LOCAL FUNCTIONS ############################
 
-function reduced_data = local_PCA(data, cfg_feats)
-
-% PCA to reduce dimensionality
-[~, PCAscore, ~, ~, EXPLAINED] = pca(data);
-% select only components accounting for up to N% predefined
-% explained variance
-keepcomps = (cumsum(EXPLAINED)/100) <= cfg_feats.PCAvarExplained;
-
-reduced_data = PCAscore(:, keepcomps);
-
-end
-
-
-function F = local_add_feature(F, PCAredFeat, origFeat, ntrials, nchans, this_feat)
-
-% only first component for multifeats
-F.multi_feats(:, end+1) = PCAredFeat(:, 1);
+function F = local_add_feature(F, origFeat, ntrials, nchans, this_feat)
 
 if ~strcmp(this_feat, 'covFFT') 
 % on the covFFT feature the channel division does not make sense: the
@@ -114,6 +98,10 @@ if ~strcmp(this_feat, 'covFFT')
         end
     end
 
+else
+
+    return
+    
 end
 
 end

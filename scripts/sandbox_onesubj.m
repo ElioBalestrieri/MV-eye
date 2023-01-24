@@ -5,6 +5,7 @@ clc
 
 %% path definition
 
+% input and packages
 software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction';
 fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
 data_path               = '../DATA/';
@@ -14,6 +15,9 @@ beta_functions_path     = '../beta_functions';
 plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
 
+% output folders
+out_feats_path          = '../computed_features';
+if ~isfolder(out_feats_path); mkdir(out_feats_path); end
 
 addpath(software_path); addpath(helper_functions_path)
 addpath(beta_functions_path); addpath(entropy_functions_path)
@@ -52,10 +56,6 @@ F = mv_features_timedomain(cfg_feats, dat, F);
 
 F = mv_periodic_aperiodic(cfg_feats, dat, F);
 
-%% classifiers table comparison
-
-tbl_classifiers = mv_features_compare(cfg_feats, F, Y);
-
 %% spatial dist classification accuracy
 
 parc_acc = mv_classify_parcels(cfg_feats, F, Y);
@@ -77,6 +77,16 @@ figure()
 plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
                   'accuracy',[-90,0],[90,0],'SVM accuracy', [.5, 1]);
 
+
+%% store F output
+% decoding will continue in python
+
+% append Y labels
+F.Y = Y;
+
+% save
+fname = 'test.mat';
+save(fullfile(out_feats_path, fname), 'F')
 
 %% continue from here >
 

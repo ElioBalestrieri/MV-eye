@@ -28,11 +28,6 @@ fooof_out = ft_freqanalysis(cfg, dat);
 % performed at the
 sngl_parc_feats = local_aperiodic_pwr_parcspec(freq, fooof_out);
 
-% cat matrices at single parcellation and pca it like there was no tomorrow
-full_mat_feats = cat(2, sngl_parc_feats{:});
-[~, rotdat, ~, ~, EXPLAINED] = pca(full_mat_feats);
-keepcomps = (cumsum(EXPLAINED)/100) <= cfg_feats.PCAvarExplained;
-
 %% cat data into the original F structure
 % ideally, this could be implemented in another mv function
 
@@ -46,15 +41,11 @@ else
     end
 end
 
-% single feature (N% explained variance)
-F.single_feats.spctr_fooof = rotdat(:, keepcomps);
-
-% only first component for multifeats
-F.multi_feats(:, end+1) = rotdat(:, 1);
+% all feats for all parcels, concatenated in one mat
+F.single_feats.spctr_fooof = cat(2, sngl_parc_feats{:});
 
 % log runtime
 F.runtime.spctr_fooof = round(toc, 2);
-
 
 
 end
