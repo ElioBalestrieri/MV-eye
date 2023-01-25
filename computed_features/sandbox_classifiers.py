@@ -12,20 +12,15 @@ import numpy as np
 import scipy as sp
 import scipy.io as sio
 import matplotlib.pyplot as plt
-
+from temp_file import loadmat_struct
 
 #%% load file & extraction
 
 fname = 'test.mat'
-mat_content = sio.loadmat(fname, squeeze_me=True, struct_as_record=False)
+mat_content = loadmat_struct(fname)
 F = mat_content['F']
 
-#%% decoding variable definition
 
-SAMPEN = F.single_feats.SAMPEN
-spctr_fooof = F.single_feats.spctr_fooof
-covFFT = F.single_feats.covFFT
-Y_labels = F.Y
 
 #%% Pipeline object definition
 
@@ -39,16 +34,39 @@ from sklearn.model_selection import cross_val_score
 # pipeline definer
 from sklearn.pipeline import Pipeline
 
+
 # deinfine the pipeline to be used 
 class_pipeline = Pipeline([('std_PCA', PCA(n_components=.9, svd_solver='full')),
                            ('SVM', SVC())
                            ])
 
-print(cross_val_score(class_pipeline, SAMPEN, Y_labels, cv=10, 
-                      scoring='balanced_accuracy').mean())
+#%% loop pipeline across features
+Y_labels = F['Y']
+summ_dict = {}
 
-print(cross_val_score(class_pipeline, spctr_fooof, Y_labels, cv=10, 
-                      scoring='balanced_accuracy').mean())
+single_feats = F['single_feats']
 
-print(cross_val_score(class_pipeline, covFFT, Y_labels, cv=10, 
-                      scoring='balanced_accuracy').mean())
+for key in single_feats:
+    
+    feat_array = single_feats[key]
+    acc = cross_val_score(class_pipeline, feat_array, Y_labels, cv=10, 
+                          scoring='balanced_accuracy').mean()
+    
+    summ_dict.update({key : np.round(acc, 2)})
+
+#%% sort in ascendin gorder
+
+srtd_accs = sorted(summ_dict.items(), key=lambda x:x[1])
+srtd_accs = dict(srtd_accs)
+
+
+#%% visualize
+
+plt.figure();
+plt.bar(range(len(srtd_accs)), list(srtd_accs.values()), align='center');
+plt.xticks(range(len(srtd_accs)), list(srtd_accs.keys()), 
+           rotation=55, ha='right');
+plt.ylim((.5, 1))
+plt.tight_layout()
+plt.ylabel('Accuracy')
+

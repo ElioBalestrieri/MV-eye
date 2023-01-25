@@ -14,6 +14,7 @@ helper_functions_path   = '../helper_functions/';
 beta_functions_path     = '../beta_functions';
 plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
+catch22_path            = '../../Software/catch22/wrap_Matlab';
 
 % output folders
 out_feats_path          = '../computed_features';
@@ -22,6 +23,7 @@ if ~isfolder(out_feats_path); mkdir(out_feats_path); end
 addpath(software_path); addpath(helper_functions_path)
 addpath(beta_functions_path); addpath(entropy_functions_path)
 addpath(plotting_functions_path); addpath(resources_path)
+addpath(catch22_path)
 addpath(fieldtrip_path); 
 ft_defaults
 
@@ -37,6 +39,12 @@ dat = ft_appenddata(cfg, dat{1}, dat{2});
 % call for config
 cfg_feats = mv_features_cfg();
 
+% shuffle
+rng(1)
+shffld_idxs = randperm(length(Y));
+Y = Y(shffld_idxs);
+dat.trial = dat.trial(shffld_idxs);
+
 %% initialize Feature structure
 ntrials = length(dat.trial);
 
@@ -47,6 +55,10 @@ F.multi_feats = double.empty(ntrials, 0);
 %% compute frequency features
 
 F = mv_features_freqdomain(cfg_feats, dat, F);
+
+%% compute catch22
+
+F = mv_wrap_catch22(cfg_feats, dat, F);
 
 %% compute time features
 

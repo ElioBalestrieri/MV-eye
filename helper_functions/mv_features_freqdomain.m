@@ -16,17 +16,7 @@ nchans = length(dat.label);
 ntrials = length(dat.trial);
 
 % spectra computation (common to all features)
-cfg = [];
-cfg.method = 'mtmfft';
-cfg.taper = 'dpss'; % commented out because this is fieldtrip default
-cfg.output = 'pow';
-cfg.keeptrials = 'yes';
-cfg.tapsmofrq = 1;
-cfg.foilim = [1 45];% avoid <1 Hz for 1/f fit
-cfg.pad = 'nextpow2';
-freq = ft_freqanalysis(cfg,dat);
-
-
+freq = ft_freqanalysis(cfg_feats.cfg_FFT,dat);
 
 % initiate switch loop for features
 
@@ -47,6 +37,9 @@ for ifeat = cfg_feats.freq
     % preallocate TEMP (and get rid of previous values, just to be sure)
     TEMP = nan(ntrials, nchans);
 
+
+    % MEMO Hz low <= band < Hz high
+
     switch this_feat
 
         case 'covFFT' % covariance matrix of FFT power     
@@ -61,7 +54,57 @@ for ifeat = cfg_feats.freq
 
             end
 
+
+        case 'freqRanges'
+
+            freqBands = fieldnames(cfg_feats.freqRanges); 
+            nBands = length(freqBands); sband_feats_cell = cell(nBands, 1);
+
+            for iBand = 1:nBands
+        
+                bandName = freqBands{iBand};
+                bandRange = cfg_feats.freqRanges.(bandName);
+                lgc_band = freq.freq>=min(bandRange) & freq.freq<max(bandRange);
+
+                red_mat = squeeze(mean(freq.powspctrm(:, :, lgc_band), 3));
+
+                % store mat with power in the single band as features
+                upbandrange = min([round(max(freq.freq)), max(bandRange)]);
+                thisfieldname = [bandName, '_', num2str(min(bandRange)), ...
+                                '_', num2str(upbandrange), '_Hz'];
+                F.single_feats.(thisfieldname) = red_mat;
+
+                % add to F structure
+                % the power in each frequency band is added in each
+                % parcel. since we want to examine the contributions of
+                % each freq band separately and as a whole, we concatenate
+                % in parcels here but the fine the single feature as a
+                % whole later (without single parcel concatenation, which
+                % woud become than redundnant)
+                F = local_add_feature(F, red_mat, ntrials, ...
+                                      nchans, bandName);
+
+                % add the red_mat in the cell, to concatenate them together
+                % in one unitary feature outside the for loop
+                sband_feats_cell{iBand} = red_mat;
+
+            end
+
+            TEMP = cat(2, sband_feats_cell{:});
             
+        case 'alpha_gamma_ratio'
+
+            lgcl_alpha = (freq.freq>=min(cfg_feats.freqRanges.alpha) & ...
+                          freq.freq <max(cfg_feats.freqRanges.alpha));
+
+            lgcl_gamma = (freq.freq>=min(cfg_feats.freqRanges.gamma) & ...
+                          freq.freq <max(cfg_feats.freqRanges.gamma));
+
+            red_mat_alpha = squeeze(mean(freq.powspctrm(:, :, lgcl_alpha), 3));
+            red_mat_gamma = squeeze(mean(freq.powspctrm(:, :, lgcl_gamma), 3));
+
+            TEMP = red_mat_alpha ./ red_mat_gamma;
+
         otherwise
 
             error('"%s" is not recognized as feature', ifeat{1})
@@ -84,9 +127,15 @@ end
 
 function F = local_add_feature(F, origFeat, ntrials, nchans, this_feat)
 
-if ~strcmp(this_feat, 'covFFT') 
-% on the covFFT feature the channel division does not make sense: the
-% channel dimension has been nulled from the covariance computation.
+if strcmp(this_feat, 'covFFT') || strcmp(this_feat, 'freqRanges')
+
+    % on the covFFT feature the channel division does not make sense: the
+    % channel dimension has been nulled from the covariance computation.
+    % The freqRanges have instead already appended to the single parcels.
+    % either cases to do that now
+    return
+
+else
 
     % single parcels (or chans) 
     if isempty(F.single_parcels)
@@ -98,10 +147,6 @@ if ~strcmp(this_feat, 'covFFT')
         end
     end
 
-else
-
-    return
-    
 end
 
 end

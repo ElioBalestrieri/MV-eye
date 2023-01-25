@@ -3,14 +3,7 @@ function F = mv_periodic_aperiodic(cfg_feats, dat, F)
 % ignore cfg_feats right now
 
 % spectra computation
-cfg = [];
-cfg.method = 'mtmfft';
-cfg.taper = 'dpss'; % commented out because this is fieldtrip default
-cfg.output = 'pow';
-cfg.keeptrials = 'yes';
-cfg.tapsmofrq = 1;
-cfg.foilim = [1 45];% avoid <1 Hz for 1/f fit
-cfg.pad = 'nextpow2';
+cfg = cfg_feats.cfg_FFT;
 freq = ft_freqanalysis(cfg,dat);
 
 %% fooof-based feature extraction
