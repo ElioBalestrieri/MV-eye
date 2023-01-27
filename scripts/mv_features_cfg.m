@@ -15,10 +15,10 @@ cfg_feats.freqRanges = struct('delta', [1, 4], 'theta', [4, 8],   ...
 
 % cfg settings for mtmfft
 cfg_feats.cfg_FFT.method = 'mtmfft';
-cfg_feats.cfg_FFT.taper = 'dpss'; % commented out because this is fieldtrip default
+cfg_feats.cfg_FFT.taper = 'hanning'; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !! dpss was returning warning given the reduced data length
 cfg_feats.cfg_FFT.output = 'pow';
 cfg_feats.cfg_FFT.keeptrials = 'yes';
-cfg_feats.cfg_FFT.tapsmofrq = 1;
+% cfg_feats.cfg_FFT.tapsmofrq = 1; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% same as before
 cfg_feats.cfg_FFT.foilim = [1 45];% avoid <1 Hz for 1/f fit
 cfg_feats.cfg_FFT.pad = 'nextpow2';
 

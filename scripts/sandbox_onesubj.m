@@ -29,6 +29,7 @@ ft_defaults
 
 % load sample dataset
 load(fullfile(data_path, 'dat_ECEO.mat'))
+dat = sourcedata;
 
 %% merge datasets & set config
 % unitary label
@@ -70,25 +71,25 @@ F = mv_periodic_aperiodic(cfg_feats, dat, F);
 
 %% spatial dist classification accuracy
 
-parc_acc = mv_classify_parcels(cfg_feats, F, Y);
-
-%% plots
-
-% plot accuracy over parcellated brain
-atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
-atlas.data = zeros(1,64984);
-filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
-sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
-
-for ilab=1:length(atlas.indexmaxlabel)
-    tmp_roiidx=find(atlas.indexmax==ilab);   
-    atlas.data(tmp_roiidx)=parc_acc.accuracy(ilab);
-end
-
-figure()
-plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
-                  'accuracy',[-90,0],[90,0],'SVM accuracy', [.5, 1]);
-
+% parc_acc = mv_classify_parcels(cfg_feats, F, Y);
+% 
+% %% plots
+% 
+% % plot accuracy over parcellated brain
+% atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
+% atlas.data = zeros(1,64984);
+% filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
+% sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
+% 
+% for ilab=1:length(atlas.indexmaxlabel)
+%     tmp_roiidx=find(atlas.indexmax==ilab);   
+%     atlas.data(tmp_roiidx)=parc_acc.accuracy(ilab);
+% end
+% 
+% figure()
+% plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
+%                   'accuracy',[-90,0],[90,0],'SVM accuracy', [.5, 1]);
+% 
 
 %% store F output
 % decoding will continue in python
