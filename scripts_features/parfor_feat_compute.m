@@ -134,23 +134,51 @@ end
 delete(thisObj)
 
 
-% %% plots
-% 
-% % plot accuracy over parcellated brain
-% atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
-% atlas.data = zeros(1,64984);
-% filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
-% sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
-% 
-% for ilab=1:length(atlas.indexmaxlabel)
-%     tmp_roiidx=find(atlas.indexmax==ilab);   
-%     atlas.data(tmp_roiidx)=parc_acc.accuracy(ilab);
-% end
-% 
-% figure()
-% plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
-%                   'accuracy',[-90,0],[90,0],'SVM accuracy', [.5, 1]);
-% 
+%% pool accuracies together
+
+accs_all_parcels = nan(360, nsubjs);
+
+for isubj = 1:nsubjs
+
+    subjcode = sprintf('%0.2d', isubj);
+    fname_in_feat = [subjcode, '_feats.mat'];
+
+    load(fullfile(out_feat_path, fname_in_feat))
+    
+    try
+
+        accs_all_parcels(:, isubj) = variableName.single_parcels_acc.accuracy;
+
+    catch
+
+        disp(subjcode)
+
+    end
+
+end
+
+
+avg_accs_ignorenan = mean(accs_all_parcels,2, 'omitnan');
+
+%% plots
+
+ft_defaults;
+
+% plot accuracy over parcellated brain
+atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
+atlas.data = zeros(1,64984);
+filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
+sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
+
+for ilab=1:length(atlas.indexmaxlabel)
+    tmp_roiidx=find(atlas.indexmax==ilab);   
+    atlas.data(tmp_roiidx)=avg_accs_ignorenan(ilab);
+end
+
+figure()
+plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
+                  'accuracy',[-0,45],[90,0],'SVM accuracy, 24 subjs', [.5, .8]);
+
 
 
 

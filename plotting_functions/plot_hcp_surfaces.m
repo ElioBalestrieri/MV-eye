@@ -1,4 +1,14 @@
-function plot_hcp_surfaces(atlas,sourcemodel,color,neg,values,viewL,viewR,title, color_limits)
+function plot_hcp_surfaces(atlas,sourcemodel,color,neg,values,viewL,viewR,title, varargin)
+
+if ~isempty(varargin)
+
+    color_limits = varargin{1};
+
+else
+
+    color_limits  = minmax(atlas.data);
+
+end
 
 sgtitle(title);
 

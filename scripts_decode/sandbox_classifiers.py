@@ -37,6 +37,7 @@ from sklearn.preprocessing import RobustScaler # to be used at some point?
 # deinfine the pipeline to be used 
 class_pipeline = Pipeline([('inpute_missing', SimpleImputer(missing_values=np.nan, 
                                                             strategy='mean')),
+                           ('scaler', RobustScaler()),
                            ('std_PCA', PCA(n_components=.9, svd_solver='full')),
                            ('SVM', SVC())
                            ])
