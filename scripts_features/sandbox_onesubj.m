@@ -55,7 +55,7 @@ F.multi_feats = double.empty(ntrials, 0);
 
 %% compute frequency features
 
-F = mv_features_freqdomain(cfg_feats, dat, F);
+[F, vout] = mv_features_freqdomain(cfg_feats, dat, F);
 
 %% compute catch22
 

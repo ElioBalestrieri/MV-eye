@@ -1,4 +1,4 @@
-function F = mv_features_freqdomain(cfg_feats, dat, F)
+function [F, Fs_singlebands] = mv_features_freqdomain(cfg_feats, dat, F)
 
 % quick input check
 if ~isfield(cfg_feats, 'freq')
@@ -57,6 +57,8 @@ for ifeat = cfg_feats.freq
 
         case 'freqRanges'
 
+            warning('freqRanges is deprecated')
+
             freqBands = fieldnames(cfg_feats.freqRanges); 
             nBands = length(freqBands); sband_feats_cell = cell(nBands, 1);
 
@@ -92,19 +94,33 @@ for ifeat = cfg_feats.freq
 
             TEMP = cat(2, sband_feats_cell{:});
             
-        case 'alpha_gamma_ratio'
+        case 'alpha_low_gamma_ratio'
 
             lgcl_alpha = (freq.freq>=min(cfg_feats.freqRanges.alpha) & ...
                           freq.freq <max(cfg_feats.freqRanges.alpha));
 
-            lgcl_gamma = (freq.freq>=min(cfg_feats.freqRanges.gamma) & ...
-                          freq.freq <max(cfg_feats.freqRanges.gamma));
+            lgcl_gamma = (freq.freq>=min(cfg_feats.freqRanges.low_gamma) & ...
+                          freq.freq <max(cfg_feats.freqRanges.low_gamma));
 
             red_mat_alpha = squeeze(mean(freq.powspctrm(:, :, lgcl_alpha), 3));
             red_mat_gamma = squeeze(mean(freq.powspctrm(:, :, lgcl_gamma), 3));
 
             TEMP = red_mat_alpha ./ red_mat_gamma;
 
+        case 'alpha_high_gamma_ratio'
+
+            lgcl_alpha = (freq.freq>=min(cfg_feats.freqRanges.alpha) & ...
+                          freq.freq <max(cfg_feats.freqRanges.alpha));
+
+            lgcl_gamma = (freq.freq>=min(cfg_feats.freqRanges.high_gamma) & ...
+                          freq.freq <max(cfg_feats.freqRanges.high_gamma));
+
+            red_mat_alpha = squeeze(mean(freq.powspctrm(:, :, lgcl_alpha), 3));
+            red_mat_gamma = squeeze(mean(freq.powspctrm(:, :, lgcl_gamma), 3));
+
+            TEMP = red_mat_alpha ./ red_mat_gamma;
+        
+        
         otherwise
 
             error('"%s" is not recognized as feature', ifeat{1})
@@ -114,14 +130,89 @@ for ifeat = cfg_feats.freq
     % store mat with features
     F.single_feats.(this_feat) = TEMP;
     % add to F structure
-    F = local_add_feature(F, TEMP, ntrials, ...
-                          nchans, this_feat);
+    F = local_add_feature(F, TEMP, ntrials, nchans, this_feat);
     % log runtime
     F.runtime.(this_feat) = round(toc, 2);
 
 end
 
+%% compute a set of features specific for each freq band
+
+if cfg_feats.freaqbandfeats_flag
+
+    freqBands = fieldnames(cfg_feats.freqRanges); 
+    nBands = length(freqBands); 
+
+    Fs_singlebands = cell(nBands, 1);
+
+    for iBand = 1:nBands
+
+        % start a first tic for power
+        tic
+
+        Fband.single_parcels = [];
+        Fband.single_feats = [];
+        Fband.multi_feats = double.empty(ntrials, 0);
+    
+        % get frequency band name and specify it as strutcture identifier
+        % based on the 
+        bandName = freqBands{iBand};
+        bandRange = cfg_feats.freqRanges.(bandName);
+
+        
+        upbandrange = min([round(max(freq.freq)), max(bandRange)]);
+        thisfieldname = [bandName, '_', num2str(min(bandRange)), ...
+                        '_', num2str(upbandrange), '_Hz'];
+
+        Fband.bandIdentifier = thisfieldname;
+
+        % this first part, taken from the old freqRange method, compute the
+        % power for the current band, based on the mtmfft.
+        lgc_band = freq.freq>=min(bandRange) & freq.freq<max(bandRange);
+        red_mat = squeeze(mean(freq.powspctrm(:, :, lgc_band), 3));
+
+        if ~isempty(red_mat)
+
+            Fband.single_feats.power = red_mat;
+            % add to F structure
+            Fband = local_add_feature(Fband, red_mat, ntrials, ...
+                                  nchans, bandName);
+ 
+
+        else % issue a warning
+
+            warning('empty matrix in %s', thisfieldname)
+
+        end
+
+        % log runtime
+        Fband.runtime.(this_feat) = round(toc, 2);
+
+        % bandpass filter in fieldtrip
+        cfg_bp = [];
+        cfg_bp.bpfilter = 'yes';
+        cfg_bp.bpfreq = bandRange;
+
+        dat_bp = ft_preprocessing(cfg_bp, dat);
+
+        % recursion 1: compute time freqs on bandpassed signal 
+        Fband = mv_features_timedomain(cfg_feats, dat_bp, Fband);
+
+        % recursion 2: compute catch22 features on bandpassed signal
+        Fband = mv_wrap_catch22(cfg_feats, dat_bp, Fband);
+
+        % local computation: feats based on inst freq
+        Fband = local_inst_freq_feats(dat_bp, Fband, ntrials, nchans);
+
+        Fs_singlebands{iBand} = Fband;
+
+    end
+
 end
+
+
+end
+
 
 %% ########################### LOCAL FUNCTIONS ############################
 
@@ -148,5 +239,48 @@ else
     end
 
 end
+
+end
+
+
+
+function Fband = local_inst_freq_feats(dat_bp, Fband, ntrials, nchans)
+
+% define smotthing kernel
+l_krnl = round(dat_bp.fsample/4);
+krnl_3d = ones(l_krnl, 1, 1)./l_krnl;
+
+% perform hilbert. ATTENTION TO THE TRANSPOSITION!
+% the data is now {time X channel} X trials
+mat_trls = cellfun(@(x) hilbert(x'), dat_bp.trial, 'UniformOutput', false);
+
+% get IF and smooth data
+mat_trls = unwrap(angle(cat(3, mat_trls{:})));
+mat_trls = dat_bp.fsample/(2*pi)*diff(convn(mat_trls, krnl_3d, 'same'));
+
+% get rid of tails containing filter artifacts
+mat_trls = mat_trls(40:end-40, :, :);
+
+% attach features
+Fband.single_feats.IF_mean = squeeze(trimmean(mat_trls, 20))';
+Fband = local_add_feature(Fband, Fband.single_feats.IF_mean, ntrials, nchans, 'IF_mean');
+
+Fband.single_feats.IF_median = squeeze(median(mat_trls))';
+Fband = local_add_feature(Fband, Fband.single_feats.IF_median, ntrials, nchans, 'IF_median');
+
+Fband.single_feats.IF_std = squeeze(std(mat_trls))';
+Fband = local_add_feature(Fband, Fband.single_feats.IF_std, ntrials, nchans, 'IF_std');
+
+
+% tic
+% mat_pre = nan(255, nchans, ntrials);
+% for k1=1:ntrials
+%     for k2=1:nchans
+%         iapf=dat_bp.fsample/(2*pi)*diff(smooth(unwrap(angle(hilbert(dat_bp.trial{k1}(k2,:)))),round(dat_bp.fsample/4)));
+%         mat_pre(:, k2, k1) = iapf;
+%     end
+% end
+% toc
+
 
 end

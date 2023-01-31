@@ -31,8 +31,9 @@ addpath(catch22_path)
 addpath(fieldtrip_path); 
 
 % transfer original files to the local (sciebo) DATAfolder?
-filetransferflag = true;
-decodesingleparcels = true;
+filetransferflag = false;
+decodesingleparcels = false;
+plotparcelsflag = false;
 
 %% loop into subjects
 
@@ -79,19 +80,19 @@ parfor isubj = 1:nsubjs
     
     %% compute frequency features
     
-    F = mv_features_freqdomain(cfg_feats, dat, F);
+    [F, vout] = mv_features_freqdomain(cfg_feats, dat, F);
     
     %% compute catch22
     
-    F = mv_wrap_catch22(cfg_feats, dat, F);
+%    F = mv_wrap_catch22(cfg_feats, dat, F);
     
     %% compute time features
     
-    F = mv_features_timedomain(cfg_feats, dat, F);
+%     F = mv_features_timedomain(cfg_feats, dat, F);
     
     %% periodic & aperiodic
     
-    F = mv_periodic_aperiodic(cfg_feats, dat, F);
+%     F = mv_periodic_aperiodic(cfg_feats, dat, F);
 
     %% spatial dist classification accuracy
 
@@ -114,15 +115,17 @@ parfor isubj = 1:nsubjs
     %% store F output   
     % decoding will continue in python
     
-    % append Y labels
-    F.Y = Y;
+%     % append Y labels
+%     F.Y = Y;
+% 
+%     % append cfg for easy check the operations performed before
+%     F.cfg_feats = cfg_feats;
+%     
+%     % save
+%     fname_out_feat = [subjcode, '_feats.mat'];
+%     saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
 
-    % append cfg for easy check the operations performed before
-    F.cfg_feats = cfg_feats;
-    
-    % save
-    fname_out_feat = [subjcode, '_feats.mat'];
-    saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
+    saveinparfor_fbands(out_feat_path, subjcode, vout, Y, cfg_feats)
 
     % feedback
     fprintf('\n\n######################\n')
@@ -136,55 +139,50 @@ delete(thisObj)
 
 %% pool accuracies together
 
-accs_all_parcels = nan(360, nsubjs);
+if  plotparcelsflag
 
-for isubj = 1:nsubjs
-
-    subjcode = sprintf('%0.2d', isubj);
-    fname_in_feat = [subjcode, '_feats.mat'];
-
-    load(fullfile(out_feat_path, fname_in_feat))
+    accs_all_parcels = nan(360, nsubjs);
     
-    try
-
-        accs_all_parcels(:, isubj) = variableName.single_parcels_acc.accuracy;
-
-    catch
-
-        disp(subjcode)
-
+    for isubj = 1:nsubjs
+    
+        subjcode = sprintf('%0.2d', isubj);
+        fname_in_feat = [subjcode, '_feats.mat'];
+    
+        load(fullfile(out_feat_path, fname_in_feat))
+        
+        try
+    
+            accs_all_parcels(:, isubj) = variableName.single_parcels_acc.accuracy;
+    
+        catch
+    
+            disp(subjcode)
+    
+        end
+    
     end
+    
+    
+    avg_accs_ignorenan = mean(accs_all_parcels,2, 'omitnan');
+    
+    %% plots
+    
+    ft_defaults;
+    
+    % plot accuracy over parcellated brain
+    atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
+    atlas.data = zeros(1,64984);
+    filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
+    sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
+    
+    for ilab=1:length(atlas.indexmaxlabel)
+        tmp_roiidx=find(atlas.indexmax==ilab);   
+        atlas.data(tmp_roiidx)=avg_accs_ignorenan(ilab);
+    end
+    
+    figure()
+    plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
+                      'accuracy',[-0,45],[90,0],'SVM accuracy, 24 subjs', [.5, .8]);
 
 end
-
-
-avg_accs_ignorenan = mean(accs_all_parcels,2, 'omitnan');
-
-%% plots
-
-ft_defaults;
-
-% plot accuracy over parcellated brain
-atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
-atlas.data = zeros(1,64984);
-filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
-sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
-
-for ilab=1:length(atlas.indexmaxlabel)
-    tmp_roiidx=find(atlas.indexmax==ilab);   
-    atlas.data(tmp_roiidx)=avg_accs_ignorenan(ilab);
-end
-
-figure()
-plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
-                  'accuracy',[-0,45],[90,0],'SVM accuracy, 24 subjs', [.5, .8]);
-
-
-
-
-
-
-
-
-
 

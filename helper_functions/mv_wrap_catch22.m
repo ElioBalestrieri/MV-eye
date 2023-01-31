@@ -1,5 +1,16 @@
 function F = mv_wrap_catch22(cfg_feats, dat, F)
 
+% give the opportunity to not run it if specified 
+if isfield(cfg_feats, 'catch22flag')
+    if ~cfg_feats.catch22flag
+        return
+    end
+else
+    warning('catch22 field not specified, and not computing it')
+    return
+end
+
+
 % vars needed for future loops
 nchans = length(dat.label);
 ntrials = length(dat.trial);
