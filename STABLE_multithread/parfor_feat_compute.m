@@ -9,7 +9,6 @@ clc
 fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
 data_path               = '/remotedata/AgGross/Fasting/NC/resultsNC/resting_state/source/lcmv';
 helper_functions_path   = '../helper_functions/';
-beta_functions_path     = '../beta_functions';
 plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
 catch22_path            = '../../Software/catch22/wrap_Matlab';
@@ -26,7 +25,6 @@ out_feat_path          = '../STRG_computed_features';
 if ~isfolder(out_feat_path); mkdir(out_feat_path); end
 
 addpath(helper_functions_path)
-addpath(beta_functions_path); 
 addpath(plotting_functions_path); addpath(resources_path)
 addpath(catch22_path)
 addpath(fieldtrip_path); 
