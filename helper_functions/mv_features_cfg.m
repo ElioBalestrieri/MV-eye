@@ -2,7 +2,9 @@ function cfg_feats = mv_features_cfg()
 % cfg definition for MV features
 
 % time domain
-cfg_feats.time = {'mean','median','std', 'SAMPEN', 'wpH'};
+cfg_feats.time = {'hjorth_mobility', 'hjorth_complexity', 'mean','median',...
+                  'std','kurtosis','skewness','Hurst_exp', ....
+                  'zero_cross_derivative','zero_cross','SAMPEN', 'wpH'};
 
 % frequency domain
 cfg_feats.freq = {'covFFT', 'alpha_low_gamma_ratio', 'alpha_high_gamma_ratio'};
@@ -18,7 +20,7 @@ cfg_feats.freqRanges = struct('delta', [1, 4], 'theta', [4, 8],   ...
 cfg_feats.freaqbandfeats_flag = true;
 
 % catch 22?
-cfg_feats.catch22flag = false;
+cfg_feats.catch22flag = true;
 
 % cfg settings for mtmfft
 cfg_feats.cfg_FFT.method = 'mtmfft';

@@ -66,6 +66,48 @@ for ifeat = cfg_feats.time
                 end
             end                    
 
+        case 'kurtosis'
+
+            TEMP = cellfun(@(x) kurtosis(x,1,2), dat.trial, 'UniformOutput',false);
+            TEMP = cat(2, TEMP{:})';            
+
+        case 'skewness'
+
+            TEMP = cellfun(@(x) skewness(x,1,2), dat.trial, 'UniformOutput',false);
+            TEMP = cat(2, TEMP{:})';            
+
+        case 'Hurst_exp'
+
+            for itrl = 1:ntrials
+                for ichan = 1:nchans
+                    TEMP(itrl,ichan) = hurst_exponent(zscore(dat.trial{itrl}(ichan,:)));
+                end
+            end                    
+
+        case 'zero_cross'
+
+            swap = cellfun(@(x) detrend(x'), dat.trial, 'UniformOutput',false);
+            marks = cellfun(@(x) convn(sign(x), ones(2, 1), 'same')', swap, 'UniformOutput',false);
+            TEMP = cat(3, marks{:}); TEMP = squeeze(sum(TEMP==0, 2))';
+
+        case 'zero_cross_derivative'
+
+            swap = cellfun(@(x) diff(x'), dat.trial, 'UniformOutput',false);
+            marks = cellfun(@(x) convn(sign(x), ones(2, 1), 'same')', swap, 'UniformOutput',false);
+            TEMP = cat(3, marks{:}); TEMP = squeeze(sum(TEMP==0, 2))';
+
+        case 'hjorth_mobility'
+
+            TEMP = cat(3, dat.trial{:});
+            TEMP = local_hjorth_mobility(TEMP);
+
+        case 'hjorth_complexity'
+
+            TEMP = cat(3, dat.trial{:});
+            derTEMP = diff(TEMP, 1, 2);
+
+            TEMP = local_hjorth_mobility(derTEMP)./local_hjorth_mobility(TEMP);
+
 
         otherwise
 
@@ -100,3 +142,13 @@ end
 
 end
 
+
+function M = local_hjorth_mobility(inArray)
+% takes N dimensional array. time MUST be on the second dimension
+% https://en.wikipedia.org/wiki/Hjorth_parameters
+
+den = squeeze(var(inArray, [], 2))';
+num = squeeze(var(diff(inArray, 1, 2), [], 2))';
+M = sqrt(num./den);
+
+end

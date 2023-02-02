@@ -6,26 +6,27 @@ clc
 %% path definition
 
 % input and packages
-software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction';
 fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
 data_path               = '/remotedata/AgGross/Fasting/NC/resultsNC/resting_state/source/lcmv';
-entropy_functions_path  = '../../Software/mMSE-master';
 helper_functions_path   = '../helper_functions/';
 beta_functions_path     = '../beta_functions';
 plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
 catch22_path            = '../../Software/catch22/wrap_Matlab';
 
+% old?
+% entropy_functions_path  = '../../Software/mMSE-master'; addpath(entropy_functions_path); 
+% software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction'; addpath(software_path); 
+
 % output folders
-out_dat_path          = '../DATA';
+out_dat_path          = '../STRG_data';
 if ~isfolder(out_dat_path); mkdir(out_dat_path); end
 
-out_feat_path          = '../computed_features';
+out_feat_path          = '../STRG_computed_features';
 if ~isfolder(out_feat_path); mkdir(out_feat_path); end
 
-
-addpath(software_path); addpath(helper_functions_path)
-addpath(beta_functions_path); addpath(entropy_functions_path)
+addpath(helper_functions_path)
+addpath(beta_functions_path); 
 addpath(plotting_functions_path); addpath(resources_path)
 addpath(catch22_path)
 addpath(fieldtrip_path); 
@@ -37,7 +38,7 @@ plotparcelsflag = false;
 
 %% loop into subjects
 
-nsubjs = 29; nthreads = 5;
+nsubjs = 29; nthreads = 8;
 
 thisObj = parpool(nthreads);
 parfor isubj = 1:nsubjs
@@ -84,15 +85,15 @@ parfor isubj = 1:nsubjs
     
     %% compute catch22
     
-%    F = mv_wrap_catch22(cfg_feats, dat, F);
+   F = mv_wrap_catch22(cfg_feats, dat, F);
     
     %% compute time features
     
-%     F = mv_features_timedomain(cfg_feats, dat, F);
+    F = mv_features_timedomain(cfg_feats, dat, F);
     
     %% periodic & aperiodic
     
-%     F = mv_periodic_aperiodic(cfg_feats, dat, F);
+    F = mv_periodic_aperiodic(cfg_feats, dat, F);
 
     %% spatial dist classification accuracy
 
@@ -109,22 +110,20 @@ parfor isubj = 1:nsubjs
 
         end
 
-
     end
 
     %% store F output   
     % decoding will continue in python
     
-%     % append Y labels
-%     F.Y = Y;
-% 
-%     % append cfg for easy check the operations performed before
-%     F.cfg_feats = cfg_feats;
-%     
-%     % save
-%     fname_out_feat = [subjcode, '_feats.mat'];
-%     saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
+    % append Y labels
+    F.Y = Y;
 
+    % append cfg for easy check the operations performed before
+    F.cfg_feats = cfg_feats;
+    
+    % save
+    fname_out_feat = [subjcode, '_feats.mat'];
+    saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
     saveinparfor_fbands(out_feat_path, subjcode, vout, Y, cfg_feats)
 
     % feedback

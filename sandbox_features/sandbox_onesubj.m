@@ -8,7 +8,7 @@ clc
 % input and packages
 software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction';
 fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
-data_path               = '../DATA/';
+data_path               = '../STRG_data/';
 entropy_functions_path  = '../../Software/mMSE-master';
 helper_functions_path   = '../helper_functions/';
 beta_functions_path     = '../beta_functions';
@@ -17,7 +17,7 @@ resources_path          = '../../Resources';
 catch22_path            = '../../Software/catch22/wrap_Matlab';
 
 % output folders
-out_feats_path          = '../computed_features';
+out_feats_path          = '../STRG_computed_features';
 if ~isfolder(out_feats_path); mkdir(out_feats_path); end
 
 addpath(software_path); addpath(helper_functions_path)
@@ -53,21 +53,26 @@ F.single_parcels = [];
 F.single_feats = [];
 F.multi_feats = double.empty(ntrials, 0);
 
+%% aperiodic
+
+F = mv_periodic_aperiodic(cfg_feats, dat, F);
+
+
+%% compute time features
+
+tic
+F = mv_features_timedomain(cfg_feats, dat, F);
+toc
+
 %% compute frequency features
 
 [F, vout] = mv_features_freqdomain(cfg_feats, dat, F);
 
 %% compute catch22
 
+tic
 F = mv_wrap_catch22(cfg_feats, dat, F);
-
-%% compute time features
-
-F = mv_features_timedomain(cfg_feats, dat, F);
-
-%% periodic & aperiodic
-
-F = mv_periodic_aperiodic(cfg_feats, dat, F);
+toc
 
 %% spatial dist classification accuracy
 

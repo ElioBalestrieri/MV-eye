@@ -35,10 +35,10 @@ else
 end
 
 % all feats for all parcels, concatenated in one mat
-F.single_feats.spctr_fooof = cat(2, sngl_parc_feats{:});
+F.single_feats.fooof_aperiodic = cat(2, sngl_parc_feats{:});
 
 % log runtime
-F.runtime.spctr_fooof = round(toc, 2);
+F.runtime.fooof_aperiodic = round(toc, 2);
 
 
 end
@@ -125,7 +125,11 @@ for ichan = 1:nparc
     ap_coeffs = (X'*X)\X'*Y;
 
     % merge periodic/aperiodic feats together
-    sngl_parc_feats{ichan} = [ap_coeffs', pow_feats];
+    % sngl_parc_feats{ichan} = [ap_coeffs', pow_feats];
+
+    % pipe only aperiodic components
+    sngl_parc_feats{ichan} = ap_coeffs';
+
 
 end
 
