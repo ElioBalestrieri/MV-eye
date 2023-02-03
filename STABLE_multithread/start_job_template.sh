@@ -13,11 +13,10 @@
 #SBATCH --mail-user=ebalestr@uni-muenster.de # your mail address
  
 # LOAD MODULES HERE IF REQUIRED
-module load palma/2019a
-module load GCC/8.2.0-2.31.1
-module load CUDA/10.1.105
-module load OpenMPI/3.1.3
-module load scipy
+module load palma/2021b
+module load GCC/11.2.0
+module load OpenMPI/4.1.1
+module load scikit-learn/1.0.1
 module load dask
 
 # START THE APPLICATION

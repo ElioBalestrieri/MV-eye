@@ -13,6 +13,12 @@ Some useful, shared, python code
 import scipy.io as sio
 import numpy as np
 
+# imputer
+from sklearn.impute import SimpleImputer
+
+# scaler
+from sklearn.preprocessing import RobustScaler
+
 
 #%% load *mat structures
 # full credit to "mergen" @ stackoverflow
@@ -53,12 +59,6 @@ def _todict(matobj):
 
 #%% concatenate the features across subjects
     
-# imputer
-from sklearn.impute import SimpleImputer
-
-# scaler
-from sklearn.preprocessing import RobustScaler
-
 def cat_subjs(infold, best_feats, strtsubj=0, endsubj=22):    
 
     # define subjects range

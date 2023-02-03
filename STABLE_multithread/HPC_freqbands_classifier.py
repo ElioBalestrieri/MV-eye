@@ -9,10 +9,15 @@ This is a temporary script file.
 
 # general
 import numpy as np
-from temp_file import loadmat_struct
 import pandas as pd
 import dask
 import os
+import sys
+ 
+# setting path for mv_python_utils
+sys.path.append('../helper_functions')
+from mv_python_utils import loadmat_struct
+
 
 #%% Pipeline object definition
 
@@ -45,12 +50,19 @@ freqbands = ['delta_1_4_Hz', 'theta_4_8_Hz', 'alpha_8_13_Hz', 'beta_13_30_Hz',
              'low_gamma_30_45_Hz', 'high_gamma_55_100_Hz']
 
 #input folder 
-infold = '../computed_features/'
+infold = '../STRG_computed_features/'
 
 # output folder
-outfold = '../decoding_accuracy/'
+outfold = '../STRG_decoding_accuracy/'
 if not(os.path.isdir(outfold)):
     os.mkdir(outfold)
+
+
+#%% define function for calling pipeline on an F structure
+# ... once the dataset has been loaded and converted into dict
+
+def loop_classify_feats(single_feats, Y_labels):
+    
 
 
 #%% define the parallel function to be called by dask
