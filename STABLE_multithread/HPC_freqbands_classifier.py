@@ -13,7 +13,9 @@ import pandas as pd
 import dask
 import os
 import sys
- 
+from datetime import datetime
+
+
 # setting path for mv_python_utils
 sys.path.append('../helper_functions')
 from mv_python_utils import loadmat_struct
@@ -57,12 +59,54 @@ outfold = '../STRG_decoding_accuracy/'
 if not(os.path.isdir(outfold)):
     os.mkdir(outfold)
 
+verboseflag = False
 
 #%% define function for calling pipeline on an F structure
 # ... once the dataset has been loaded and converted into dict
 
-def loop_classify_feats(single_feats, Y_labels):
+def loop_classify_feats(Xs, Y, pipe, cv_fold=10):
     
+    storing_vect = np.empty((1, len(Xs)+1))
+    
+    count_exceptions = 0
+    acc_feat = 0; 
+    for key in Xs:
+        
+        X = Xs[key]
+        
+        # get rid of full nan columns, if any
+        X = X[:, ~(np.any(np.isnan(X), axis=0))]
+
+        # start concatenate arrays for whole freqband decode
+        if acc_feat==0:
+            catX = np.copy(X)
+        else:
+            catX = np.concatenate((catX, X), axis=1)
+        
+        # sometimes there might be a convergence error. avoid breaking the whole
+        # computation for this 
+        try:        
+            acc = cross_val_score(pipe, X, Y, cv=cv_fold, 
+                                  scoring='balanced_accuracy').mean()
+        except:
+            acc = np.nan; count_exceptions += 1
+                
+        storing_vect[0, acc_feat] = acc
+            
+        acc_feat += 1    
+        # print(str(acc_feat) + '/' + str(len(Xs)+1) + ' features computed\n')
+
+    # compute accuracy on the whole freqbands, aggregated features. Always with
+    # a try statement for the same reason listed above
+    try:
+        acc_whole = cross_val_score(pipe, catX, Y, cv=cv_fold, 
+                                    scoring='balanced_accuracy').mean()
+    except:
+        acc_whole = np.nan; count_exceptions += 1
+
+    storing_vect[0, acc_feat] = acc_whole
+    
+    return storing_vect, count_exceptions
 
 
 #%% define the parallel function to be called by dask
@@ -70,61 +114,58 @@ def loop_classify_feats(single_feats, Y_labels):
 @dask.delayed
 def single_subj_classify(isubj, infold, outfold):
     
+    # first serially load 
     acc_freq = 0
     for ifreq in freqbands:
         
         # load file & extraction
-        print('#######\n\nComputing ' + ifreq + '\n\n#######')
+        if verboseflag: print('#######\n\nComputing ' + ifreq + '\n\n#######')
+        
         fname = infold + f'{isubj+1:02d}_' + ifreq + '.mat'
         mat_content = loadmat_struct(fname)
-        F = mat_content['variableName']
-    
+        F = mat_content['variableName']    
         Y_labels = F['Y']
         single_feats = F['single_feats']
-    
+
         if acc_freq ==0:
             storing_mat = np.empty((len(freqbands), len(single_feats)+1))
     
-        acc_feat = 0; 
-        for key in single_feats:
-            
-            feat_array = single_feats[key]
-            
-            # get rid of full nan columns, if any
-            feat_array = feat_array[:, ~(np.any(np.isnan(feat_array), axis=0))]
-    
-            # start concatenate arrays for whole freqband decode
-            if acc_feat==0:
-                swap_feat = np.copy(feat_array)
-            else:
-                swap_feat = np.concatenate((swap_feat, feat_array), axis=1)
-            
-            acc = cross_val_score(class_pipeline, feat_array, Y_labels, cv=10, 
-                                  scoring='balanced_accuracy').mean()
-            
-            storing_mat[acc_freq, acc_feat] = acc
-                
-            acc_feat += 1    
-            print(str(acc_feat) + '/' + str(len(single_feats)+1) + ' features computed\n')
-    
-        # compute accuracy on the whole freqbands, aggregated features
-        acc_whole = cross_val_score(class_pipeline, swap_feat, Y_labels, cv=10, 
-                                    scoring='balanced_accuracy').mean()
-    
-        storing_mat[acc_freq, acc_feat] = acc_whole
+        # call loop across all features + aggregated feature
+        vect_accs_bp, count_exc_bp = loop_classify_feats(single_feats, Y_labels, 
+                                                         class_pipeline)
+        storing_mat[acc_freq, :] = vect_accs_bp
         
-        print(str(len(single_feats)+1) + '/' + str(len(single_feats)+1) + ' features computed\n')
         acc_freq += 1
     
     updtd_col_list = list(single_feats.keys()); updtd_col_list.append('full_set')
     
-    subjDF = pd.DataFrame(storing_mat, columns=updtd_col_list, index=freqbands)
+    subjDF_freqs = pd.DataFrame(storing_mat, columns=updtd_col_list, index=freqbands)
     
     foutname = outfold + f'{isubj+1:02d}_freqBands.csv' 
-    subjDF.to_csv(foutname)
+    subjDF_freqs.to_csv(foutname)
     
-    print('Done wih subj ' + f'{isubj+1:02d}')
-    return subjDF
+    # repeat, but for the features calculated without bandpass
+    # load file & extraction
+    if verboseflag: print('#######\n\nClassifying feats obtained on non-bandpassed signal\n\n#######')
+    fname = infold + f'{isubj+1:02d}_' + 'feats.mat'
+    mat_content = loadmat_struct(fname)
+    F = mat_content['variableName']    
+    Y_labels = F['Y']
+    single_feats = F['single_feats']
+
+    vect_accs_nobp, count_exc_nobp = loop_classify_feats(single_feats, Y_labels, 
+                                                         class_pipeline)
+    full_count_exc = count_exc_bp + count_exc_nobp
+    
+    updtd_col_list = list(single_feats.keys()); updtd_col_list.append('full_set')
+    
+    subjDF_nobp = pd.DataFrame(vect_accs_nobp, columns=updtd_col_list)
+    foutname = outfold + f'{isubj+1:02d}_nobp.csv' 
+    subjDF_nobp.to_csv(foutname)
+        
+    if verboseflag: print('Done wih subj ' + f'{isubj+1:02d}')
+        
+    return full_count_exc
     
 
 #%% loop pipeline across subjects and features
@@ -139,8 +180,13 @@ for isubj in range(nsubjs_loaded):
     allsubjs_DFs.append(outDF)
     
 #%% actually launch process
-    
-dask.compute(allsubjs_DFs)
+countExc = dask.compute(allsubjs_DFs)
+
+# log and save 
+countExcDF = pd.DataFrame(list(countExc))
+dateTimeObj = datetime.now()
+fname = 'log_' + str(dateTimeObj.year) + str(dateTimeObj.month) + str(dateTimeObj.day) + '_' + str(dateTimeObj.hour) + '.csv'
+countExcDF.to_csv(fname)
 
 #%% plot stuff
 
