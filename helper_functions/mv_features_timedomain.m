@@ -108,6 +108,10 @@ for ifeat = cfg_feats.time
 
             TEMP = local_hjorth_mobility(derTEMP)./local_hjorth_mobility(TEMP);
 
+        case 'MCL'
+
+            TEMP = cat(3, dat.trial{:});
+            TEMP = squeeze(mean(abs(diff(TEMP, 1, 2).^2), 2));
 
         otherwise
 
