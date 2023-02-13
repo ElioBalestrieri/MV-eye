@@ -46,6 +46,13 @@ shffld_idxs = randperm(length(Y));
 Y = Y(shffld_idxs);
 dat.trial = dat.trial(shffld_idxs);
 
+%% scale up data
+
+cfg=[];
+cfg.operation='x1*1e11';
+cfg.parameter='trial';
+dat=ft_math(cfg,dat);
+
 %% initialize Feature structure
 ntrials = length(dat.trial);
 
@@ -55,7 +62,7 @@ F.multi_feats = double.empty(ntrials, 0);
 
 %% aperiodic
 
-F = mv_periodic_aperiodic(cfg_feats, dat, F);
+% F = mv_periodic_aperiodic(cfg_feats, dat, F);
 
 
 %% compute time features

@@ -58,6 +58,11 @@ for ifeat = cfg_feats.time
             TEMP = cellfun(@(x) std(x,[],2), dat.trial, 'UniformOutput',false);
             TEMP = cat(2, TEMP{:})';
 
+        case 'iqr'
+
+            TEMP = cellfun(@(x) iqr(x,2), dat.trial, 'UniformOutput',false);
+            TEMP = cat(2, TEMP{:})';
+
         case 'wpH'
 
             for itrl = 1:ntrials
@@ -111,7 +116,70 @@ for ifeat = cfg_feats.time
         case 'MCL'
 
             TEMP = cat(3, dat.trial{:});
-            TEMP = squeeze(mean(abs(diff(TEMP, 1, 2).^2), 2));
+            TEMP = squeeze(mean(abs(diff(TEMP, 1, 2).^2), 2))';
+
+
+        case 'DN_FitKernelSmoothraw_entropy'
+
+            if ~exist('DN_storage', 'var')            
+                DN_storage = cell(ntrials, nchans);
+                flag_compute_fitKernel = true;
+            else
+                flag_compute_fitKernel = false;
+                
+            end
+
+            for itrial =1:ntrials
+
+                for ichan = 1:nchans
+
+                    x_ts = dat.trial{itrial}(ichan, :);
+                    
+                    if flag_compute_fitKernel
+                        out = DN_FitKernelSmooth_adapted(x_ts);
+                        DN_storage{itrial, ichan} = out;
+                    else
+                        out = DN_storage{itrial, ichan};
+                    end
+                        
+                    TEMP(itrial, ichan) = out.entropy;
+
+                end
+
+            end
+
+        case 'DN_FitKernelSmoothraw_max'
+
+            if ~exist('DN_storage', 'var')            
+                DN_storage = cell(ntrials, nchans);
+                flag_compute_fitKernel = true;
+            else
+                flag_compute_fitKernel = false;
+            end
+
+            for itrial =1:ntrials
+
+                for ichan = 1:nchans
+
+                    x_ts = dat.trial{itrial}(ichan, :);
+                    
+                    if flag_compute_fitKernel
+                        out = DN_FitKernelSmooth_adapted(x_ts);
+                        DN_storage{itrial, ichan} = out;
+                    else
+                        out = DN_storage{itrial, ichan};
+                    end
+                        
+                    TEMP(itrial, ichan) = out.max;
+
+                end
+
+            end
+
+        case 'mad'
+
+            TEMP = cellfun(@(x) mad(x,0,2), dat.trial, 'UniformOutput',false);
+            TEMP = cat(2, TEMP{:})';
 
         otherwise
 
