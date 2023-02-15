@@ -39,7 +39,7 @@ class_pipeline = Pipeline([('inpute_missing', SimpleImputer(missing_values=np.na
                                                             strategy='mean')),
                            ('scaler', RobustScaler()),
                            ('std_PCA', PCA(n_components=.9, svd_solver='full')),
-                           ('SVM', SVC())
+                           ('SVM', SVC(C=10))
                            ])
 
 #%% loop pipeline across subjects and features

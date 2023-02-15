@@ -26,8 +26,9 @@ nsubjs = 22; multi_subj = [];
 for isubj = 1:nsubjs
 
     subjcode = sprintf('%0.2d', isubj);
-    fname_in = [subjcode '_feats.mat'];
-    
+%     fname_in = [subjcode '_feats.mat'];
+    fname_in = [subjcode '_high_gamma_55_100_Hz.mat'];
+
     % load sample dataset
     temp = load(fullfile(in_feat_path, fname_in));
     F = temp.variableName;
@@ -82,8 +83,11 @@ for icol = 1:nfeats
 
        this_parc = temp1(:, iparc);
        vct_cond1 = this_parc(Y==1); vct_cond2 = this_parc(Y==2);
-       [~, p, k] = kstest2(vct_cond1, vct_cond2);
-
+       try
+           [~, p, k] = kstest2(vct_cond1, vct_cond2);
+       catch
+           p=nan; k=nan;
+       end
        kmetrics(icol, iparc) = k; ks_pvals(icol, iparc) = p;
 
     end

@@ -59,7 +59,7 @@ def _todict(matobj):
 
 #%% concatenate the features across subjects
     
-def cat_subjs(infold, best_feats, strtsubj=0, endsubj=22):    
+def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats'):
 
     # define subjects range
     range_subjs = np.arange(strtsubj, endsubj)
@@ -68,20 +68,26 @@ def cat_subjs(infold, best_feats, strtsubj=0, endsubj=22):
     remove_nan = SimpleImputer(missing_values=np.nan, strategy='mean')
     trim_outliers = RobustScaler()
 
+
     accsubj = 0
     for isubj in range_subjs:
 
         # load file & extraction
-        fname = infold + f'{isubj+1:02d}' + '_feats.mat'
+        fname = infold + f'{isubj+1:02d}_' + ftype + '.mat'
         mat_content = loadmat_struct(fname)
         F = mat_content['variableName']
         
         Y_labels = F['Y']
 
+        if not best_feats:
+            loop_feats = F['single_feats'].keys()
+        else:
+            loop_feats = best_feats
+
         subj_dict = {}
         
         acc_feat = 0
-        for ifeat in best_feats:
+        for ifeat in loop_feats:
             
             this_val = F['single_feats'][ifeat]        
             this_val = remove_nan.fit_transform(this_val)

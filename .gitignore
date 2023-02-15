@@ -134,6 +134,8 @@ dmypy.json
 *.fig
 # data files
 *.mat
+*.csv
+*.pickle
 
 # plotting templates and atlases (at least for the time being)
 *.nii
@@ -141,4 +143,6 @@ dmypy.json
 
 # temp code files 
 *.asv
-*.csv
+
+# idea folder from pycharm
+.idea/*
