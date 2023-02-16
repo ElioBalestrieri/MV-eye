@@ -121,6 +121,9 @@ ax = sns.stripplot(data=best_feats_sorted, orient='h',
 ax = sns.barplot(data=best_feats_sorted, orient='h', errcolor=(.3, .3, .3, 1),
     linewidth=1, edgecolor=(.3, .3, .3, 1), facecolor=(0, 0, 0, 0))
 
+ax.set_yticklabels(best_feats_sorted.columns, size=8)
+
+
 plt.tight_layout()
 plt.title('Winning features, (within subjects)')
 plt.xlabel('balanced accuracy')
@@ -136,3 +139,4 @@ for itxt in new_idx:
 
 
 
+plt.show()
