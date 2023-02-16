@@ -137,6 +137,9 @@ dmypy.json
 *.csv
 *.pickle
 
+# HPC outputs
+*.out
+
 # plotting templates and atlases (at least for the time being)
 *.nii
 *.gii
