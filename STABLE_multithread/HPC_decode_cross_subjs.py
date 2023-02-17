@@ -39,8 +39,8 @@ sys.path.append('../helper_functions/')
 from mv_python_utils import cat_subjs
 
 # define fre bands as file strings
-# freqbands = ['delta_1_4_Hz', 'theta_4_8_Hz', 'alpha_8_13_Hz', 'beta_13_30_Hz']
-freqbands = ['low_gamma_30_45_Hz', 'high_gamma_55_100_Hz', 'feats']
+freqbands = ['delta_1_4_Hz', 'theta_4_8_Hz', 'alpha_8_13_Hz','beta_13_30_Hz',
+	     'low_gamma_30_45_Hz', 'high_gamma_55_100_Hz', 'feats']
 
 # input folder
 infold = '../STRG_computed_features/'
