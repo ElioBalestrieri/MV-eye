@@ -8,7 +8,7 @@ The repo contains code for features extraction from resting state with eyes open
 The division of the subfolders is coarsely made in 3 categories: storage (STRG), stable code (STABLE) and sandbox(es), where to try things out.
 
 ### input/output storage (STRG)
-Serving for storage of input/output data. (Hopefully) absent in the actual github repo due to gitignore: github cannot store large datasets.
+Serving for storage of input/output data. (Hopefully) absent in the online github repo due to gitignore: github cannot store large datasets.
 Three different sub folders:
 
 **STRG_** * 
