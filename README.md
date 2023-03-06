@@ -1,37 +1,43 @@
 # MV-eye
 repo for MultiVariate EYEs closed/open
 
-### basic repos structure
-names perhaps self explanatory
+## introduction
+The repo contains code for features extraction from resting state with eyes open/closed. The input data (not on github) comes in a fieldtrip-like format in source space based on an anatomical parcellation in 360 brain areas. The workflow is in MATLAB, for features extraction, and python for classification.  
 
-**input/output folders**
-serving for storage, but nor for data. likely absent in the actual github repo due to gitignore.
+## basic repos structure
+The division of the subfolders is coarsely made in 3 categories: storage (STRG), stable code (STABLE) and sandbox(es), where to try things out.
 
-- STRG_ * 
-		data 
-		computed_features
-		decoding_accuracy
+### input/output storage (STRG)
+Serving for storage of input/output data. (Hopefully) absent in the actual github repo due to gitignore: github cannot store large datasets.
+Three different sub folders:
+
+**STRG_** * 
+ - data 
+ - computed_features
+ - decoding_accuracy
        
-**stable code**
-the tested code to be used with parallel computing (preferably on HPC)
+### stable code
+the tested code to be used with parallel computing. This is run preferably, but not exclusively, on the High Performance Cluster (HPC). The scripts made for the HPC have informative filenames. They are contained in the folder:
 
-- STABLE_multithread
+**STABLE_multithread**
 
-**supporting functions**
-everything that gets called from the main codes
+### supporting functions
 
-- helper_functions
-  _it contains the cfg file !!!_
-- plotting_functions
+everything that gets called from the main codes. Distinction between:
 
-**sandboxes**
-to try things out, either for feature generation or decoding. 
+**helper_functions**
+The sub-folder containing the functions that _perform computation_ and, even more importantly, _of the function that generates the cfg file!!!_
 
-- sandbox_ *
-		decode
-		features
+**plotting_functions**
+tools for visualization
+
+### sandboxes
+to try things out, either for feature generation or decoding. Two different sub-folders:
+
+**sandbox_** *
+ - decode
+ - features
 		
 ### branching regulations
-
-HPC vs main (vs specific machines)
+At some point we might discuss whether to use different branches for different environments -HPC might need different cfg, for example-. For the time being, everything resides on main 
 
