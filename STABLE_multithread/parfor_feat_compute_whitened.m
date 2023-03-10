@@ -13,12 +13,8 @@ plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
 catch22_path            = '../../Software/catch22/wrap_Matlab';
 
-% old?
-% entropy_functions_path  = '../../Software/mMSE-master'; addpath(entropy_functions_path); 
-% software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction'; addpath(software_path); 
-
 % output folders
-out_dat_path          = '../STRG_data';
+out_dat_path          = '/remotedata/AgGross/TBraiC/MV-eye/STRG_data';
 if ~isfolder(out_dat_path); mkdir(out_dat_path); end
 
 out_feat_path          = '../STRG_computed_features';
@@ -36,9 +32,9 @@ plotparcelsflag = false;
 
 %% loop into subjects
 
-nsubjs = 29; nthreads = 6;
-
+nsubjs = 29; nthreads = 8;
 thisObj = parpool(nthreads);
+
 parfor isubj = 1:nsubjs
 
     ft_defaults;
@@ -63,19 +59,31 @@ parfor isubj = 1:nsubjs
     dat = ft_appenddata(cfg, dat{1}, dat{2});
     % call for config
     cfg_feats = mv_features_cfg();
+
+    % select only visual cortices
+    text_prompt = 'visual';
+    mask_parcel = mv_select_parcels(text_prompt);
+    
+    cfg = [];
+    cfg.channel = dat.label(mask_parcel);
+    dat = ft_preprocessing(cfg, dat);
     
     % shuffle
     rng(1)
     shffld_idxs = randperm(length(Y));
     Y = Y(shffld_idxs);
     dat.trial = dat.trial(shffld_idxs);
-
+    
     %% scale up data
-
-    cfg=[];
-    cfg.operation='x1*1e11';
-    cfg.parameter='trial';
-    dat=ft_math(cfg,dat);
+    
+    dat.trial = cellfun(@(x) x*1e11, dat.trial, 'UniformOutput',false);
+    
+    %% compute derivative
+    
+    whitened_dat = dat;
+    whitened_dat.trial = cellfun(@(x) diff(x,1,2), dat.trial, 'UniformOutput',false);
+    whitened_dat.time = cellfun(@(x) x(2:end), dat.time, 'UniformOutput',false);
+    
     
     %% initialize Feature structure
     ntrials = length(dat.trial);
@@ -83,53 +91,38 @@ parfor isubj = 1:nsubjs
     F.single_parcels = [];
     F.single_feats = [];
     F.multi_feats = double.empty(ntrials, 0);
+    F.Y = Y;
     
-    %% compute frequency features
-    
-    [F, vout] = mv_features_freqdomain(cfg_feats, dat, F);
-    
-    %% compute catch22
-    
-    F = mv_wrap_catch22(cfg_feats, dat, F);
+    F_whitened = F;
     
     %% compute time features
     
     F = mv_features_timedomain(cfg_feats, dat, F);
+    F_whitened = mv_features_timedomain(cfg_feats, whitened_dat, F_whitened);
     
-    %% periodic & aperiodic
+    %% compute frequency features
+
+    F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);
+    F_whitened = mv_features_freqdomain_nonrecursive(cfg_feats, whitened_dat, F_whitened);
     
-    F = mv_periodic_aperiodic(cfg_feats, dat, F);
-
-    %% spatial dist classification accuracy
-
-    if decodesingleparcels
-
-        try
-            parc_acc = mv_classify_parcels(cfg_feats, F, Y);
-            % also append the accuracy for the single parcels
-            F.single_parcels_acc = parc_acc;
-
-        catch ME
-
-            F.single_parcels_acc = ME;
-
-        end
-
-    end
+    %% compute catch22
+    
+    F = mv_wrap_catch22(cfg_feats, dat, F);
+    F_whitened = mv_wrap_catch22(cfg_feats, dat, F_whitened);
 
     %% store F output   
     % decoding will continue in python
     
-    % append Y labels
-    F.Y = Y;
-
     % append cfg for easy check the operations performed before
     F.cfg_feats = cfg_feats;
-    
+    F_whitened.cfg_feats = cfg_feats;
+
     % save
-    fname_out_feat = [subjcode, '_feats.mat'];
+    fname_out_feat = [subjcode, '_NOWHIT_feats.mat'];
+    fname_out_feat_whit = [subjcode, '_WHIT_feats.mat'];
+
     saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
-    saveinparfor_fbands(out_feat_path, subjcode, vout, Y, cfg_feats)
+    saveinparfor(fullfile(out_feat_path, fname_out_feat_whit), F_whitened)
 
     % feedback
     fprintf('\n\n######################\n')
@@ -139,54 +132,3 @@ parfor isubj = 1:nsubjs
 end
 
 delete(thisObj)
-
-
-%% pool accuracies together
-
-if  plotparcelsflag
-
-    accs_all_parcels = nan(360, nsubjs);
-    
-    for isubj = 1:nsubjs
-    
-        subjcode = sprintf('%0.2d', isubj);
-        fname_in_feat = [subjcode, '_feats.mat'];
-    
-        load(fullfile(out_feat_path, fname_in_feat))
-        
-        try
-    
-            accs_all_parcels(:, isubj) = variableName.single_parcels_acc.accuracy;
-    
-        catch
-    
-            disp(subjcode)
-    
-        end
-    
-    end
-    
-    
-    avg_accs_ignorenan = mean(accs_all_parcels,2, 'omitnan');
-    
-    %% plots
-    
-    ft_defaults;
-    
-    % plot accuracy over parcellated brain
-    atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
-    atlas.data = zeros(1,64984);
-    filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
-    sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
-    
-    for ilab=1:length(atlas.indexmaxlabel)
-        tmp_roiidx=find(atlas.indexmax==ilab);   
-        atlas.data(tmp_roiidx)=avg_accs_ignorenan(ilab);
-    end
-    
-    figure()
-    plot_hcp_surfaces(atlas,sourcemodel,'YlOrRd',0, ...
-                      'accuracy',[-0,45],[90,0],'SVM accuracy, 24 subjs', [.5, .8]);
-
-end
-
