@@ -18,7 +18,7 @@ plt.close('all')
 
 #%% single subjects
 
-up_to_subj = 22
+up_to_subj = 29
 
 for isubj in range(up_to_subj):
     

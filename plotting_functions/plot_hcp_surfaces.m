@@ -32,7 +32,7 @@ axis off
 axis vis3d
 axis equal 
 view(viewL)
-camlight
+%camlight
 lighting gouraud
 material dull
 axis tight
@@ -56,7 +56,7 @@ axis off
 axis vis3d
 axis equal 
 view(viewR)
-camlight
+%camlight
 lighting gouraud
 material dull
 axis tight
