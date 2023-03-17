@@ -18,6 +18,7 @@ pd.options.mode.chained_assignment = None  # to deal with chained assignement wa
 import sys
 import os
 
+
 #%% custom functions
 
 # setting path for mv_python_utils
@@ -43,10 +44,17 @@ from sklearn.impute import SimpleImputer
 # scaler
 from sklearn.preprocessing import RobustScaler # to be used at some point?
 
+from sklearn.preprocessing import FunctionTransformer
+
+
 # deinfine the pipeline to be used 
+
+
+
 class_pipeline = Pipeline([('inpute_missing', SimpleImputer(missing_values=np.nan, 
                                                             strategy='mean')),
                            ('scaler', RobustScaler()),
+                           ('squeezer', FunctionTransformer(np.tanh)),
                            ('std_PCA', PCA(n_components=.9, svd_solver='full')),
                            ('SVM', SVC(C=10))
                            ])
@@ -146,7 +154,7 @@ def single_subj_classify(isubj, infold, outfold):
     HCP_parcels = pd.read_csv('../helper_functions/HCP-MMP1_UniqueRegionList_RL.csv')
     red_HCP = HCP_parcels[HCP_parcels['cortex'].str.contains('visual', case=False)]
 
-    ftypes = ['WHIT', 'NOWHIT']
+    ftypes = ['VG']
     acc_type = 0
     for itype in ftypes:
         
@@ -177,8 +185,8 @@ def single_subj_classify(isubj, infold, outfold):
     
     subjDF_feats = pd.DataFrame(storing_mat, columns=updtd_col_list, index=ftypes)
     
-    foutname_feats = outfold + f'{isubj+1:02d}_WHIT_vs_NOWHIT_feats.csv' 
-    foutname_parcels = outfold + f'{isubj+1:02d}_WHIT_vs_NOWHIT_parcels.csv' 
+    foutname_feats = outfold + f'{isubj+1:02d}_VG_accs_feats.csv' 
+    foutname_parcels = outfold + f'{isubj+1:02d}_VG_accs_parcels.csv' 
 
     subjDF_feats.to_csv(foutname_feats)
     red_HCP.to_csv(foutname_parcels)

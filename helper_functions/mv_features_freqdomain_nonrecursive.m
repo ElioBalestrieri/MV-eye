@@ -85,7 +85,27 @@ for ifeat = cfg_feats.freq
             end
 
 
-  
+        case 'fullFFT'
+
+            % this specific case needs N_trials x M_freqs X M_parcels
+            TEMP = nan(ntrials, nchans*length(freq.freq));
+
+            for itrl = 1:ntrials
+
+                ThisTrl = freq.powspctrm(itrl, :, :);
+                ThisTrl = ThisTrl(:);
+                TEMP(itrl, :) = ThisTrl;
+
+            end
+
+            for ifreq = 1:length(freq.freq)
+
+                this_FREQ = squeeze(freq.powspctrm(:, :, ifreq));
+
+                % add to F structure
+                F = local_add_feature(F, this_FREQ, ntrials, nchans, 'pass_FFT');
+
+            end
 
         case 'alpha_low_gamma_ratio'
 
@@ -126,6 +146,8 @@ for ifeat = cfg_feats.freq
     F = local_add_feature(F, TEMP, ntrials, nchans, this_feat);
     % log runtime
     F.runtime.(this_feat) = round(toc, 2);
+
+    
 
 end
 
@@ -171,12 +193,12 @@ end
 
 function F = local_add_feature(F, origFeat, ntrials, nchans, this_feat)
 
-if strcmp(this_feat, 'covFFT') || strcmp(this_feat, 'freqRanges')
+if strcmp(this_feat, 'covFFT') || strcmp(this_feat, 'freqRanges') || strcmp(this_feat, 'fullFFT')
 
     % on the covFFT feature the channel division does not make sense: the
     % channel dimension has been nulled from the covariance computation.
-    % The freqRanges have instead already appended to the single parcels.
-    % either cases to do that now
+    % The freqRanges & fullFFT have instead already appended to the single parcels.
+
     return
 
 else

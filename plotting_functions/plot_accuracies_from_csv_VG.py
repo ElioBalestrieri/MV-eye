@@ -24,56 +24,25 @@ up_to_subj = 29
 for isubj in range(up_to_subj):
     
     subjname = f'{isubj+1:02d}'
-    fname_whit_state = infold + subjname + '_WHIT_vs_NOWHIT_TANH_feats.csv'
-    DF_whit_state = pd.read_csv(fname_whit_state)
+    fname = infold + subjname + '_VG_accs_feats.csv'
+    DF = pd.read_csv(fname)
 
     # long format needed because difference in columns between full freq and bandpassed signal
-    long_DF_whit_state = DF_whit_state.set_index('Unnamed: 0').stack().to_frame().\
-                    reset_index().rename(columns={'Unnamed: 0': 'whitening_state', 
-                                                  'level_1': 'feature', 
-                                                  0: 'accuracy'})
+    long_DF = DF.set_index('Unnamed: 0').stack().to_frame().\
+                reset_index().rename(columns={'Unnamed: 0': 'signal_type', 
+                                              'level_1': 'feature', 
+                                              0: 'accuracy'})
 
-    long_DF_whit_state.insert(0, 'SubjID', subjname)
+    long_DF.insert(0, 'SubjID', subjname)
     
     if isubj == 0:
-        allsubjs_DF = long_DF_whit_state.copy()
+        allsubjs_DF = long_DF.copy()
     else:
-        allsubjs_DF = pd.concat([allsubjs_DF, long_DF_whit_state])
+        allsubjs_DF = pd.concat([allsubjs_DF, long_DF])
         
         
 allsubjs_DF.to_csv(infold + 'allsubjs_WHIT_vs_NOWHIT.csv')
     
-
-#%% compute summary statistics 
-
-res = pg.rm_anova(data=allsubjs_DF, dv='accuracy', 
-                  within=['whitening_state', 'feature'], subject='SubjID',
-                  detailed=True)
-
-allsubjs_DF.groupby('whitening_state').describe()
-    
-
-fullsets = allsubjs_DF.loc[allsubjs_DF['feature']=='full_set', :]
-
-res_F_fullsets = pg.rm_anova(data=fullsets, dv='accuracy', 
-                  within=['whitening_state'], subject='SubjID',
-                  detailed=True)
-
-res_T = pg.ttest(fullsets['accuracy'][fullsets['whitening_state']=='WHIT'], 
-                 fullsets['accuracy'][fullsets['whitening_state']=='NOWHIT'],
-                 paired=False)
-
-res_T_syn = pg.ttest(fullsets['accuracy'][fullsets['whitening_state']=='WHIT'], 
-                 fullsets['accuracy'][fullsets['whitening_state']=='SYN'],
-                 paired=True)
-
-plt.figure()
-sns.barplot(data=fullsets, x='whitening_state', y='accuracy', errorbar='se', 
-            palette='Set3')
-plt.ylim([.9, 1])
-plt.title('All Features, whitening condition \n' + 
-           'F=' + str(np.round(res_F_fullsets['F'][0], decimals=3)) + ', p='  + 
-           str(np.round(res_F_fullsets['p-unc'][0], decimals=3)))
 
 
 #%% plotting
@@ -81,13 +50,13 @@ rounded_DF = allsubjs_DF.round(3)
 
 # 2. for each freq band plot the ordered full set of features.
 # moreover, select the best 3 features in each freq band
-whit_types_names = rounded_DF.whitening_state.unique()
+signal_type = rounded_DF.signal_type.unique()
 
 acc_type = 0
-for itype in whit_types_names:
+for itype in signal_type:
 
     plt.figure()     
-    this_DF = rounded_DF.loc[rounded_DF['whitening_state']==itype, :]
+    this_DF = rounded_DF.loc[rounded_DF['signal_type']==itype, :]
 
     # go to wide format to allow sorting
     wide_DF = pd.pivot(this_DF, index='SubjID', columns='feature', 
@@ -106,13 +75,13 @@ for itype in whit_types_names:
     
     # collect either the top 2 features OR all the features > .90 
     # for the current bandpass condition
-    winning_feats = new_idx.index[new_idx>.9]
+    winning_feats = new_idx.index[new_idx>.85]
     if winning_feats.empty:
         winning_feats = new_idx.index[0:2]
     
     this_band_best_feats = this_DF[this_DF.feature.isin(winning_feats)]
 
-    cols_bind = ['whitening_state', 'feature']; swap_feats = this_band_best_feats.copy()
+    cols_bind = ['signal_type', 'feature']; swap_feats = this_band_best_feats.copy()
     swap_feats['combined'] = this_band_best_feats[cols_bind].apply(
         lambda row: '\n'.join(row.values.astype(str)), axis=1)
     

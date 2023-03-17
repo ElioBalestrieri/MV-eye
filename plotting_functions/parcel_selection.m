@@ -170,14 +170,61 @@ end
 
 figure()
 
-subplot(1, 2, 1)
-plot(mean(noWHIT_FFT, 3)')
+subplot(2, 2, 1); hold on
+
+x_ = out_FFT.freq; 
+avg_FFT_nowhit = mean(noWHIT_FFT, 3)';
+stderr_FFT_nowhit = std(noWHIT_FFT,[], 3)'./sqrt(nsubjs);
+
+diffs_noWHIT = squeeze(noWHIT_FFT(1, :, :) - noWHIT_FFT(2, :, :));
+tvals_noWHIT = sqrt(nsubjs)*mean(diffs_noWHIT, 2)./std(diffs_noWHIT,[], 2);
+
+shadedErrorBar(x_, avg_FFT_nowhit(:, 1), stderr_FFT_nowhit(:, 1), ...
+               'lineProps', 'b')
+
+shadedErrorBar(x_, avg_FFT_nowhit(:, 2), stderr_FFT_nowhit(:, 2), ...
+               'lineProps', 'r')
+
+legend('EC', 'EO')
+
 title('FFT, no whitening', 'FontSize',13)
 
-subplot(1, 2, 2)
-plot(mean(WHIT_FFT, 3)')
-title('FFT, + whitening', 'FontSize',13)
+subplot(2, 2, 3); hold on
 
-legend('EC', 'EO', 'FontSize', 12)
+plot(x_, tvals_noWHIT, 'k', 'LineWidth',3)
+thresh_sig = tinv(.975, nsubjs-1);
+plot(x_, ones(length(tvals_noWHIT), 1)*thresh_sig, '--r', 'LineWidth',1)
+legend('t-values', 'sig threshold')
+ylim([0, 7])
+
+title({'FFT, no whitening', 't-values EC-EO'}, 'FontSize',13)
+
+
+
+subplot(2, 2, 2); hold on
+
+x_ = out_FFT.freq; 
+avg_FFT_whit = mean(WHIT_FFT, 3)';
+stderr_FFT_whit = std(WHIT_FFT,[], 3)'./sqrt(nsubjs);
+
+diffs_WHIT = squeeze(WHIT_FFT(1, :, :) - WHIT_FFT(2, :, :));
+tvals_WHIT = sqrt(nsubjs)*mean(diffs_WHIT, 2)./std(diffs_WHIT,[], 2);
+
+shadedErrorBar(x_, avg_FFT_whit(:, 1), stderr_FFT_whit(:, 1), ...
+               'lineProps', 'b')
+
+shadedErrorBar(x_, avg_FFT_whit(:, 2), stderr_FFT_whit(:, 2), ...
+               'lineProps', 'r')
+
+title('FFT, pre-whitened', 'FontSize',13)
+
+subplot(2, 2, 4); hold on
+
+plot(x_, tvals_WHIT, 'k', 'LineWidth',3)
+thresh_sig = tinv(.975, nsubjs-1);
+plot(x_, ones(length(tvals_WHIT), 1)*thresh_sig, '--r', 'LineWidth',1)
+ylim([0, 7])
+
+title({'FFT, pre-whitened', 't-values EC-EO'}, 'FontSize',13)
 
 

@@ -8,7 +8,7 @@ cfg_feats.time = {'iqr', 'MCL','DN_FitKernelSmoothraw_entropy','DN_FitKernelSmoo
                     'zero_cross_derivative','zero_cross','SAMPEN', 'wpH'};
 
 % frequency domain
-cfg_feats.freq = {'alpha_low_gamma_ratio', 'alpha_high_gamma_ratio'};
+cfg_feats.freq = {'fullFFT', 'alpha_low_gamma_ratio', 'alpha_high_gamma_ratio'};
 
 % add mandatory freq band defintion for freqRanges
 % Hz low <= band < Hz high

@@ -32,7 +32,7 @@ plotparcelsflag = false;
 
 %% loop into subjects
 
-nsubjs = 29; nthreads = 8;
+nsubjs = 29; nthreads = 7;
 thisObj = parpool(nthreads);
 
 parfor isubj = 1:nsubjs
@@ -108,7 +108,7 @@ parfor isubj = 1:nsubjs
     %% compute catch22
     
     F = mv_wrap_catch22(cfg_feats, dat, F);
-    F_whitened = mv_wrap_catch22(cfg_feats, dat, F_whitened);
+    F_whitened = mv_wrap_catch22(cfg_feats, whitened_dat, F_whitened);
 
     %% store F output   
     % decoding will continue in python
