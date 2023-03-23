@@ -1,7 +1,7 @@
 %% select parcels based on specific constraints
 % defined 
 clearvars;
-close all
+% close all
 clc
 
 %% path definition
@@ -19,7 +19,8 @@ ft_defaults
 
 
 % output folder
-in_feats_path = '../STRG_decoding_accuracy';
+in_accs_path = '../STRG_decoding_accuracy';
+in_feats_path = '../STRG_computed_features';
 
 text_prompt = 'visual';
 
@@ -28,16 +29,99 @@ mask_parcel = mv_select_parcels(text_prompt);
 
 nsubjs = 29; 
 
+
+%% fetch features x parcel
+
+for isubj = 1:nsubjs
+
+    subjcode = sprintf('%0.2d', isubj);
+    temp = load(fullfile(in_feats_path, [subjcode, 'NONwhiten_VG_feats.mat']));
+
+    F = temp.variableName;
+
+    % split aperiodic component in slope and offset (right now in odd and
+    % even coulmns of fooof_aperiodic, respectively)
+    F.single_feats.aperiodic_slope = F.single_feats.fooof_aperiodic(:, 1:2:end);
+    F.single_feats.aperiodic_offset = F.single_feats.fooof_aperiodic(:, 2:2:end);
+
+    fn = fieldnames(F.single_feats);
+    
+    mask_delete = ismember(fn, {'fullFFT', 'fooof_aperiodic'}); 
+    
+    fn(mask_delete) = []; nfeats = length(fn);
+
+    if isubj == 1 % preallocate nan matrix
+        zvals_feats_parcels = nan(length(fn), sum(mask_parcel), nsubjs);
+    end
+
+
+    for ifeat = 1:nfeats
+
+        this_feat_name = fn{ifeat};
+        this_feat = F.single_feats.(this_feat_name);
+
+        bsl = this_feat(F.Y==1, :); vis_stim = this_feat(F.Y==2, :);
+        ztemp = mean(vis_stim-bsl)./std(vis_stim-bsl);
+        
+        zvals_feats_parcels(ifeat, :, isubj) = ztemp;
+
+    end
+
+
+end
+
+%% visualize features on topography
+
+frmttd_feat_names = cellfun(@(x) strrep(x, '_', '\_'), fn, 'UniformOutput',false);
+
+% prepare atlases
+atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
+filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
+sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
+
+for ifeat = 25:nfeats
+
+    this_feat_name = fn{ifeat};
+    this_feat_zscores = squeeze(zvals_feats_parcels(ifeat, :, :));
+    this_feat_tvals = sqrt(nsubjs)*mean(this_feat_zscores, 2)./std( ...
+        this_feat_zscores, [], 2);
+
+
+    tmp_dat = deal(zeros(1,64984));
+
+
+    acc_index = 0; oridxs = find(mask_parcel)';
+    for ilab=oridxs
+        acc_index=acc_index+1;
+        tmp_roiidx=find(atlas.indexmax==ilab);   
+        tmp_dat(tmp_roiidx)=this_feat_tvals(acc_index);
+    end
+    
+    maxabs = max(abs(this_feat_tvals));
+    this_clims = [-maxabs, maxabs];
+    
+    figure(); atlas.data = tmp_dat;
+    plot_hcp_surfaces(atlas,sourcemodel,'-RdBu',0, ...
+                      'accuracy',[0,0],[0,0],{frmttd_feat_names{ifeat}, ...
+                      'T values'}, this_clims);
+
+    waitforbuttonpress
+
+end
+
+
+%% fetch accuracy x parcel
+
 VG_mat = nan(sum(mask_parcel), nsubjs);
 
 for isubj = 1:nsubjs
 
     subjcode = sprintf('%0.2d', isubj);
-    fname = [subjcode '_VG_accs_parcels.csv'];
+    fname = [subjcode '_PREwhiten_VG_parcels.csv'];
 
-    prcls = readtable(fullfile(in_feats_path, fname), "VariableNamingRule","preserve");
+    prcls = readtable(fullfile(in_accs_path, fname), "VariableNamingRule","preserve");
 
-    VG_mat(:, isubj) = prcls.decode_accuracy_VG;
+    VG_mat(:, isubj) = prcls.decode_accuracy_PREwhiten_VG;
 
 end
 
@@ -46,7 +130,7 @@ end
 
 % prepare atlases
 atlas = ft_read_cifti('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii');
-[dat_VG, dat_nonwhit] = deal(zeros(1,64984));
+[tmp_dat, dat_nonwhit] = deal(zeros(1,64984));
 filename = 'S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii';
 sourcemodel = ft_read_headshape({filename, strrep(filename, '.L.', '.R.')});
 
@@ -56,12 +140,12 @@ acc_index = 0; oridxs = find(mask_parcel)';
 for ilab=oridxs
     acc_index=acc_index+1;
     tmp_roiidx=find(atlas.indexmax==ilab);   
-    dat_VG(tmp_roiidx)=avg_acc_VG(acc_index);
+    tmp_dat(tmp_roiidx)=avg_acc_VG(acc_index);
 end
 
 this_clims = [.7, .9];
 
-figure(); atlas.data = dat_VG;
+figure(); atlas.data = tmp_dat;
 plot_hcp_surfaces(atlas,sourcemodel,'Purples',0, ...
                   'accuracy',[0,0],[0,0],{'Visual Gamma response', ...
                   'Decoding Accuracy'}, this_clims);

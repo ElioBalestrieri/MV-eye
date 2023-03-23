@@ -86,7 +86,7 @@ def loop_classify_parcels(single_parcels, Y):
             N_comps = grid_search_gauss.best_estimator_.n_components;
             
             # evaluate congruence 
-            predicted_labels = grid_search_gauss.best_estimator_.predict(X)
+            predicted_labels = grid_search_gauss.best_estimator_.predict(X_squeezed)
             acc = metrics.rand_score(Y, predicted_labels)
 
         except:
@@ -107,7 +107,7 @@ def single_subj_classify(isubj, infold, outfold):
     HCP_parcels = pd.read_csv('../helper_functions/HCP-MMP1_UniqueRegionList_RL.csv')
     red_HCP = HCP_parcels[HCP_parcels['cortex'].str.contains('visual', case=False)]
 
-    ftypes = ['NONwhiten_VG', 'PREwhiten_VG']
+    ftypes = ['NONwhiten_VG']
     acc_type = 0
     for itype in ftypes:
         

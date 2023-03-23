@@ -5,7 +5,7 @@ if ~isfield(cfg_feats, 'freq')
     disp('No features in the frequency domain')
     return
 else
-    if isempty(cfg_feats.time)
+    if isempty(cfg_feats.freq)
         disp('No features in the frequency domain')
         return
     end
@@ -22,29 +22,38 @@ freq = ft_freqanalysis(cfg_feats.cfg_FFT,dat);
 freqBands = fieldnames(cfg_feats.freqRanges); 
 nBands = length(freqBands); 
 
-for iBand = 1:nBands
+if ismember('freqRanges', cfg_feats.freq)
 
-    bandName = freqBands{iBand};
-    bandRange = cfg_feats.freqRanges.(bandName);
-    lgc_band = freq.freq>=min(bandRange) & freq.freq<max(bandRange);
+    for iBand = 1:nBands
+    
+        bandName = freqBands{iBand};
+        bandRange = cfg_feats.freqRanges.(bandName);
+        lgc_band = freq.freq>=min(bandRange) & freq.freq<max(bandRange);
+    
+        red_mat = squeeze(mean(freq.powspctrm(:, :, lgc_band), 3));
+    
+        % store mat with power in the single band as features
+        upbandrange = min([round(max(freq.freq)), max(bandRange)]);
+        thisfieldname = [bandName, '_power_', num2str(min(bandRange)), ...
+                        '_', num2str(upbandrange), '_Hz'];
+        F.single_feats.(thisfieldname) = red_mat;
+    
+        % add to F structure
+        % the power in each frequency band is added in each
+        % parcel. since we want to examine the contributions of
+        % each freq band separately and as a whole, we concatenate
+        % in parcels here but the fine the single feature as a
+        % whole later (without single parcel concatenation, which
+        % woud become than redundnant)
+        F = local_add_feature(F, red_mat, ntrials, ...
+                              nchans, bandName);
+    
+    end
 
-    red_mat = squeeze(mean(freq.powspctrm(:, :, lgc_band), 3));
-
-    % store mat with power in the single band as features
-    upbandrange = min([round(max(freq.freq)), max(bandRange)]);
-    thisfieldname = [bandName, '_power_', num2str(min(bandRange)), ...
-                    '_', num2str(upbandrange), '_Hz'];
-    F.single_feats.(thisfieldname) = red_mat;
-
-    % add to F structure
-    % the power in each frequency band is added in each
-    % parcel. since we want to examine the contributions of
-    % each freq band separately and as a whole, we concatenate
-    % in parcels here but the fine the single feature as a
-    % whole later (without single parcel concatenation, which
-    % woud become than redundnant)
-    F = local_add_feature(F, red_mat, ntrials, ...
-                          nchans, bandName);
+    % null the entry for freqRange in order to avoid incurring in errors
+    % afterwards
+    where_freqRange = ismember(cfg_feats.freq, 'freqRanges');
+    cfg_feats.freq(where_freqRange) = [];
 
 end
 
@@ -146,8 +155,6 @@ for ifeat = cfg_feats.freq
     F = local_add_feature(F, TEMP, ntrials, nchans, this_feat);
     % log runtime
     F.runtime.(this_feat) = round(toc, 2);
-
-    
 
 end
 

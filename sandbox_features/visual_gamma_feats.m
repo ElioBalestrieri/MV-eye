@@ -39,6 +39,13 @@ cfg = [];
 cfg.channel = dat.label(mask_parcel);
 dat = ft_preprocessing(cfg, dat);
 
+% resample to 256 Hz for consistency with EC/OC
+cfg = [];
+cfg.resamplefs = 256;
+dat = ft_resampledata(cfg, dat);
+
+
+
 % redefine trials for pre and post stim segments
 cfg_pre.toilim = [-1, 0];
 dat_pre = ft_redefinetrial(cfg_pre, dat);

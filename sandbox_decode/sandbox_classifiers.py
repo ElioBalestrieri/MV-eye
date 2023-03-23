@@ -154,11 +154,11 @@ def single_subj_classify(isubj, infold, outfold):
     HCP_parcels = pd.read_csv('../helper_functions/HCP-MMP1_UniqueRegionList_RL.csv')
     red_HCP = HCP_parcels[HCP_parcels['cortex'].str.contains('visual', case=False)]
 
-    ftypes = ['VG']
+    ftypes = ['NONwhiten_VG', 'PREwhiten_VG']
     acc_type = 0
     for itype in ftypes:
         
-        fname = infold + f'{isubj+1:02d}_' + itype + '_feats.mat'    
+        fname = infold + f'{isubj+1:02d}' + itype + '_feats.mat'    
         mat_content = loadmat_struct(fname)
         F = mat_content['variableName']    
         Y_labels = F['Y']
@@ -185,8 +185,8 @@ def single_subj_classify(isubj, infold, outfold):
     
     subjDF_feats = pd.DataFrame(storing_mat, columns=updtd_col_list, index=ftypes)
     
-    foutname_feats = outfold + f'{isubj+1:02d}_VG_accs_feats.csv' 
-    foutname_parcels = outfold + f'{isubj+1:02d}_VG_accs_parcels.csv' 
+    foutname_feats = outfold + f'{isubj+1:02d}_' + itype + '_feats.csv' 
+    foutname_parcels = outfold + f'{isubj+1:02d}_' + itype + '_parcels.csv' 
 
     subjDF_feats.to_csv(foutname_feats)
     red_HCP.to_csv(foutname_parcels)

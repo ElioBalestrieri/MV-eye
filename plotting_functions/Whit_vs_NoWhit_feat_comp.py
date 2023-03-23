@@ -24,7 +24,7 @@ up_to_subj = 29
 for isubj in range(up_to_subj):
     
     subjname = f'{isubj+1:02d}'
-    fname_whit_state = infold + subjname + '_WHIT_vs_NOWHIT_TANH_feats.csv'
+    fname_whit_state = infold + subjname + '_PREwhiten_VG_feats.csv'
     DF_whit_state = pd.read_csv(fname_whit_state)
 
     # long format needed because difference in columns between full freq and bandpassed signal
@@ -59,13 +59,13 @@ res_F_fullsets = pg.rm_anova(data=fullsets, dv='accuracy',
                   within=['whitening_state'], subject='SubjID',
                   detailed=True)
 
-res_T = pg.ttest(fullsets['accuracy'][fullsets['whitening_state']=='WHIT'], 
-                 fullsets['accuracy'][fullsets['whitening_state']=='NOWHIT'],
-                 paired=False)
+# res_T = pg.ttest(fullsets['accuracy'][fullsets['whitening_state']=='WHIT'], 
+#                  fullsets['accuracy'][fullsets['whitening_state']=='NOWHIT'],
+#                  paired=False)
 
-res_T_syn = pg.ttest(fullsets['accuracy'][fullsets['whitening_state']=='WHIT'], 
-                 fullsets['accuracy'][fullsets['whitening_state']=='SYN'],
-                 paired=True)
+# res_T_syn = pg.ttest(fullsets['accuracy'][fullsets['whitening_state']=='WHIT'], 
+#                  fullsets['accuracy'][fullsets['whitening_state']=='SYN'],
+#                  paired=True)
 
 plt.figure()
 sns.barplot(data=fullsets, x='whitening_state', y='accuracy', errorbar='se', 
@@ -106,7 +106,7 @@ for itype in whit_types_names:
     
     # collect either the top 2 features OR all the features > .90 
     # for the current bandpass condition
-    winning_feats = new_idx.index[new_idx>.9]
+    winning_feats = new_idx.index[new_idx>.85]
     if winning_feats.empty:
         winning_feats = new_idx.index[0:2]
     
