@@ -284,7 +284,7 @@ def single_subj_classify(isubj, infold, outfold):
             foutname_parcels = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_parcels.csv' 
     
             red_HCP.to_csv(foutname_parcels)
-            subjDF_feats.ro_csv(foutname_feats)
+            subjDF_feats.to_csv(foutname_feats)
 
             full_count_exc = full_count_exc + count_exc1 + count_exc2
             
