@@ -1,14 +1,11 @@
-function cfg_feats = mv_features_cfg()
+function cfg_feats = mv_features_cfg_theoretical_freqbands()
 % cfg definition for MV features
 
 % time domain
-cfg_feats.time = {'iqr', 'MCL','DN_FitKernelSmoothraw_entropy','DN_FitKernelSmoothraw_max',...
-                    'mad','hjorth_mobility', 'hjorth_complexity', 'mean','median',...
-                    'std','kurtosis','skewness','Hurst_exp', ....
-                    'zero_cross_derivative','zero_cross','SAMPEN', 'wpH'};
+cfg_feats.time = {};
 
 % frequency domain
-cfg_feats.freq = {'fullFFT'};
+cfg_feats.freq = {'freqRanges', 'alpha_low_gamma_ratio', 'alpha_high_gamma_ratio'};
 
 % add mandatory freq band defintion for freqRanges
 % Hz low <= band < Hz high
@@ -18,10 +15,10 @@ cfg_feats.freqRanges = struct('delta', [1, 4], 'theta', [4, 8],   ...
 
 % compute time-defined features on signal bandpassed in each of the
 % freqRanges? (power is also computed here)
-cfg_feats.freaqbandfeats_flag = false;
+cfg_feats.freaqbandfeats_flag = true;
 
 % catch 22?
-cfg_feats.catch22flag = true;
+cfg_feats.catch22flag = false;
 
 % cfg settings for mtmfft
 cfg_feats.cfg_FFT.method = 'mtmfft';

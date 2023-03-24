@@ -1,4 +1,4 @@
-%% EC/EO decoding
+%% VG features extraction
 clearvars;
 close all
 clc
@@ -7,15 +7,11 @@ clc
 
 % input and packages
 fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
-data_path               = '/remotedata/AgGross/Fasting/NC/resultsNC/resting_state/source/lcmv';
+data_path               = '/remotedata/AgGross/Fasting/NC/resultsNC/visual_gamma/source';
 helper_functions_path   = '../helper_functions/';
 plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
 catch22_path            = '../../Software/catch22/wrap_Matlab';
-
-% old?
-% entropy_functions_path  = '../../Software/mMSE-master'; addpath(entropy_functions_path); 
-% software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction'; addpath(software_path); 
 
 % output folders
 out_dat_path          = '../STRG_data';
@@ -44,16 +40,32 @@ parfor isubj = 1:nsubjs
     ft_defaults;
 
     subjcode = sprintf('%0.2d', isubj);
-    fname_in = ['S' subjcode '_control_hcpsource_1snolap.mat'];
+    fname_in = ['S' subjcode '_satted_source_VG.mat'];
     
     % load sample dataset
     temp = load(fullfile(data_path, fname_in));
-    dat = temp.sourcedata;
+    sourcedata = temp.sourcedata;
+
+    % select only visual cortices
+    text_prompt = 'visual';
+    mask_parcel = mv_select_parcels(text_prompt);
     
-    if filetransferflag
-        fname_out_dat = [subjcode, '_dat.mat'];
-        saveinparfor(fullfile(out_dat_path, fname_out_dat), dat)
-    end        
+    cfg = [];
+    cfg.channel = sourcedata.label(mask_parcel);
+    sourcedata = ft_preprocessing(cfg, sourcedata);
+
+    % redefine trials for pre and post stim segments
+    cfg_pre = [];
+    cfg_pre.toilim = [-1, 0];
+    dat_pre = ft_redefinetrial(cfg_pre, sourcedata);
+    
+    cfg_stim = [];
+    cfg_stim.toilim = [1, 2];
+    dat_stim = ft_redefinetrial(cfg_stim, sourcedata);
+    
+    % merge the data together in a format that allow backward compatibility
+    % with EC EO 
+    dat = {dat_pre, dat_stim};
 
     %% merge datasets & set config
     % unitary label
@@ -71,52 +83,45 @@ parfor isubj = 1:nsubjs
     dat.trial = dat.trial(shffld_idxs);
 
     %% scale up data
-
-    cfg=[];
-    cfg.operation='x1*1e11';
-    cfg.parameter='trial';
-    dat=ft_math(cfg,dat);
     
+    dat.trial = cellfun(@(x) x*1e11, dat.trial, 'UniformOutput',false);
+
+    %% compute derivative
+    
+    whitened_dat = dat;
+    whitened_dat.trial = cellfun(@(x) diff(x,1,2), dat.trial, 'UniformOutput',false);
+    whitened_dat.time = cellfun(@(x) x(2:end), dat.time, 'UniformOutput',false);
+     
     %% initialize Feature structure
     ntrials = length(dat.trial);
     
     F.single_parcels = [];
     F.single_feats = [];
     F.multi_feats = double.empty(ntrials, 0);
+    F.Y = Y;
     
+    F_whitened = F;
+
+    %% periodic & aperiodic
+    
+    F = mv_periodic_aperiodic(cfg_feats, dat, F);
+    F_whitened = mv_periodic_aperiodic(cfg_feats, whitened_dat, F_whitened);
+
     %% compute frequency features
-    
-    [F, vout] = mv_features_freqdomain(cfg_feats, dat, F);
-    
-    %% compute catch22
-    
-    F = mv_wrap_catch22(cfg_feats, dat, F);
+
+    F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);
+    F_whitened = mv_features_freqdomain_nonrecursive(cfg_feats, whitened_dat, F_whitened);
     
     %% compute time features
     
     F = mv_features_timedomain(cfg_feats, dat, F);
+    F_whitened = mv_features_timedomain(cfg_feats, whitened_dat, F_whitened);
     
-    %% periodic & aperiodic
+    %% compute catch22
     
-    F = mv_periodic_aperiodic(cfg_feats, dat, F);
-
-    %% spatial dist classification accuracy
-
-    if decodesingleparcels
-
-        try
-            parc_acc = mv_classify_parcels(cfg_feats, F, Y);
-            % also append the accuracy for the single parcels
-            F.single_parcels_acc = parc_acc;
-
-        catch ME
-
-            F.single_parcels_acc = ME;
-
-        end
-
-    end
-
+    F = mv_wrap_catch22(cfg_feats, dat, F);
+    F_whitened = mv_wrap_catch22(cfg_feats, whitened_dat, F_whitened);
+    
     %% store F output   
     % decoding will continue in python
     
@@ -127,9 +132,11 @@ parfor isubj = 1:nsubjs
     F.cfg_feats = cfg_feats;
     
     % save
-    fname_out_feat = [subjcode, '_feats.mat'];
+    fname_out_feat = [subjcode, 'NONwhiten_VG_feats.mat'];
     saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
-    saveinparfor_fbands(out_feat_path, subjcode, vout, Y, cfg_feats)
+
+    fname_out_feat = [subjcode, 'PREwhiten_VG_feats.mat'];
+    saveinparfor(fullfile(out_feat_path, fname_out_feat), F_whitened)
 
     % feedback
     fprintf('\n\n######################\n')

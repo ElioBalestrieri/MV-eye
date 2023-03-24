@@ -8,7 +8,7 @@ clc
 % input and packages
 software_path           = '../../Software/biosig-master/biosig/t300_FeatureExtraction';
 fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
-data_path               = '/remotedata/AgGross/TBraiC/MV-eye/STRG_data';
+data_path               = '/remotedata/AgGross/Fasting/NC/resultsNC/visual_gamma/source';
 entropy_functions_path  = '../../Software/mMSE-master';
 helper_functions_path   = '../helper_functions/';
 beta_functions_path     = '../beta_functions';
@@ -28,8 +28,32 @@ addpath(fieldtrip_path);
 ft_defaults
 
 % load sample dataset
-load(fullfile(data_path, 'dat_ECEO.mat'))
+load(fullfile(data_path, 'S01_satted_source_VG'))
 dat = sourcedata;
+
+% select only visual cortices
+text_prompt = 'visual';
+mask_parcel = mv_select_parcels(text_prompt);
+
+cfg = [];
+cfg.channel = dat.label(mask_parcel);
+dat = ft_preprocessing(cfg, dat);
+
+% resample to 256 Hz for consistency with EC/OC
+cfg = [];
+cfg.resamplefs = 256;
+dat = ft_resampledata(cfg, dat);
+
+
+
+% redefine trials for pre and post stim segments
+cfg_pre.toilim = [-1, 0];
+dat_pre = ft_redefinetrial(cfg_pre, dat);
+
+cfg_stim.toilim = [1, 2];
+dat_stim = ft_redefinetrial(cfg_stim, dat);
+
+dat = {dat_pre, dat_stim};
 
 %% merge datasets & set config
 % unitary label
@@ -40,13 +64,6 @@ dat = ft_appenddata(cfg, dat{1}, dat{2});
 % call for config
 cfg_feats = mv_features_cfg();
 
-% select only visual cortices
-text_prompt = 'visual';
-mask_parcel = mv_select_parcels(text_prompt);
-
-cfg = [];
-cfg.channel = dat.label(mask_parcel);
-dat = ft_preprocessing(cfg, dat);
 
 % shuffle
 rng(1)
@@ -74,6 +91,11 @@ F.multi_feats = double.empty(ntrials, 0);
 F.Y = Y;
 
 F_whitened = F;
+
+%% periodic & aperiodic
+
+F = mv_periodic_aperiodic(cfg_feats, dat, F);
+F_whitened = mv_periodic_aperiodic(cfg_feats, whitened_dat, F_whitened);
 
 %% compute frequency features
 

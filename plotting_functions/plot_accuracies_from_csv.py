@@ -11,13 +11,14 @@ Created on Mon Feb  6 09:42:52 2023
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 infold = '../STRG_decoding_accuracy/'
 plt.close('all')
 
-#%% fetch files
+#%% single subjects
 
-up_to_subj = 22
+up_to_subj = 29
 
 for isubj in range(up_to_subj):
     
@@ -46,7 +47,78 @@ for isubj in range(up_to_subj):
     else:
         allsubjs_DF = pd.concat([allsubjs_DF, DF_subj])
         
+# compute average accuracy for each feature
+comparative_accs_DF = allsubjs_DF.groupby(['freq_band', 'feature']).mean()
+comparative_accs_DF = comparative_accs_DF.rename(columns={'accuracy': 'CV_WS_acc'})
+# add nan
+comparative_accs_DF['CV_BS_acc'] = ''        
+comparative_accs_DF['LO_acc'] = ''        
+comparative_accs_DF['CV_BS_acc'] = np.nan        
+comparative_accs_DF['LO_acc'] = np.nan        
+
+comparative_accs_DF = comparative_accs_DF.reset_index()
+
+#%% fetch 
+
+freq_bands_names = ['delta_1_4_Hz', 'theta_4_8_Hz', 'alpha_8_13_Hz',
+                    'beta_13_30_Hz', 'low_gamma_30_45_Hz', 'high_gamma_55_100_Hz',
+                    'feats']
+
+for iband in freq_bands_names:
+    
+    fname = infold + iband + '_intersubjs_accs.csv'
+    DF_freqband_across_subjs = pd.read_csv(fname)
+    long_DF_AS = DF_freqband_across_subjs.set_index('Unnamed: 0').transpose()
+    
+    if iband == 'feats':
+        this_band = 'all_bands'
+    else:
+        this_band = iband
         
+    idxs_feats = long_DF_AS.index
+    
+    for this_feat in idxs_feats:
+        
+        if this_feat == 'aggregate':
+            old_feat_name = 'full_set'
+        else:
+            old_feat_name = this_feat
+        
+        tmp_ = long_DF_AS.loc[this_feat, :]
+        bnd_mask = comparative_accs_DF['freq_band']==this_band
+        feat_mask = comparative_accs_DF['feature']==old_feat_name
+
+        comparative_accs_DF.loc[bnd_mask&feat_mask,'CV_BS_acc'] = tmp_['CV_accuracy'] 
+        comparative_accs_DF.loc[bnd_mask&feat_mask,'LO_acc'] = tmp_['GEN_accuracy'] 
+        
+    
+#%% compute average accuracy and sort accordingly
+
+comparative_accs_DF['AVG_acc'] = comparative_accs_DF.iloc[:, 2:5].mean(axis=1)
+comparative_accs_DF = comparative_accs_DF.sort_values('AVG_acc', ascending=False)
+    
+# plot the 10 best features across all
+winning_feats_allconds = comparative_accs_DF.iloc[0:10, :]
+cols_bind = ['freq_band', 'feature']; 
+winning_feats_allconds['features'] = winning_feats_allconds[cols_bind].apply(
+        lambda row: '\n'.join(row.values.astype(str)), axis=1)
+
+winning_feats_allconds = winning_feats_allconds.drop(['freq_band', 'feature', 
+                                                      'AVG_acc'], axis=1)
+    
+out = pd.melt(winning_feats_allconds, id_vars='features', value_name='decoding accuracy', 
+              value_vars=['CV_WS_acc', 'CV_BS_acc', 'LO_acc'])
+
+plt.figure()
+ax = sns.barplot(data=out.round(3), x='decoding accuracy', y='features',
+            hue='variable', orient='h', palette="ch:start=.2,rot=-.3, dark=.4")
+sns.move_legend(ax, "lower center",
+    bbox_to_anchor=(.5, 1), ncol=3, title=None, frameon=False,)
+plt.xlim((.7, 1))
+plt.tight_layout()
+
+plt.suptitle('Winning features')
+
 #%% plotting
 rounded_DF = allsubjs_DF.round(3)
 
@@ -106,7 +178,7 @@ for iband in fbands_names:
 
     acc_band += 1
 
-#%% 3. plot the best feats across subjects and bands
+#%% 3. plot the best feats within subjects and bands
 
 # usual long to wide
 best_feats_wide = pd.pivot(allsubjs_and_bands_best, index='SubjID', 

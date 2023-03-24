@@ -1,11 +1,11 @@
-function [F, Fs_singlebands] = mv_features_freqdomain(cfg_feats, dat, F)
+function F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F)
 
 % quick input check
 if ~isfield(cfg_feats, 'freq')
     disp('No features in the frequency domain')
     return
 else
-    if isempty(cfg_feats.time)
+    if isempty(cfg_feats.freq)
         disp('No features in the frequency domain')
         return
     end
@@ -17,6 +17,45 @@ ntrials = length(dat.trial);
 
 % spectra computation (common to all features)
 freq = ft_freqanalysis(cfg_feats.cfg_FFT,dat);
+
+% compute power separately for each frequency band and add it as a feature
+freqBands = fieldnames(cfg_feats.freqRanges); 
+nBands = length(freqBands); 
+
+if ismember('freqRanges', cfg_feats.freq)
+
+    for iBand = 1:nBands
+    
+        bandName = freqBands{iBand};
+        bandRange = cfg_feats.freqRanges.(bandName);
+        lgc_band = freq.freq>=min(bandRange) & freq.freq<max(bandRange);
+    
+        red_mat = squeeze(mean(freq.powspctrm(:, :, lgc_band), 3));
+    
+        % store mat with power in the single band as features
+        upbandrange = min([round(max(freq.freq)), max(bandRange)]);
+        thisfieldname = [bandName, '_power_', num2str(min(bandRange)), ...
+                        '_', num2str(upbandrange), '_Hz'];
+        F.single_feats.(thisfieldname) = red_mat;
+    
+        % add to F structure
+        % the power in each frequency band is added in each
+        % parcel. since we want to examine the contributions of
+        % each freq band separately and as a whole, we concatenate
+        % in parcels here but the fine the single feature as a
+        % whole later (without single parcel concatenation, which
+        % woud become than redundnant)
+        F = local_add_feature(F, red_mat, ntrials, ...
+                              nchans, bandName);
+    
+    end
+
+    % null the entry for freqRange in order to avoid incurring in errors
+    % afterwards
+    where_freqRange = ismember(cfg_feats.freq, 'freqRanges');
+    cfg_feats.freq(where_freqRange) = [];
+
+end
 
 % initiate switch loop for features
 
@@ -41,7 +80,7 @@ for ifeat = cfg_feats.freq
     % MEMO Hz low <= band < Hz high
 
     switch this_feat
-
+           
         case 'covFFT' % covariance matrix of FFT power     
 
             % this specific case needs N_trials x M_freqs
@@ -55,45 +94,28 @@ for ifeat = cfg_feats.freq
             end
 
 
-        case 'freqRanges'
+        case 'fullFFT'
 
-            warning('freqRanges is deprecated')
+            % this specific case needs N_trials x M_freqs X M_parcels
+            TEMP = nan(ntrials, nchans*length(freq.freq));
 
-            freqBands = fieldnames(cfg_feats.freqRanges); 
-            nBands = length(freqBands); sband_feats_cell = cell(nBands, 1);
+            for itrl = 1:ntrials
 
-            for iBand = 1:nBands
-        
-                bandName = freqBands{iBand};
-                bandRange = cfg_feats.freqRanges.(bandName);
-                lgc_band = freq.freq>=min(bandRange) & freq.freq<max(bandRange);
-
-                red_mat = squeeze(mean(freq.powspctrm(:, :, lgc_band), 3));
-
-                % store mat with power in the single band as features
-                upbandrange = min([round(max(freq.freq)), max(bandRange)]);
-                thisfieldname = [bandName, '_', num2str(min(bandRange)), ...
-                                '_', num2str(upbandrange), '_Hz'];
-                F.single_feats.(thisfieldname) = red_mat;
-
-                % add to F structure
-                % the power in each frequency band is added in each
-                % parcel. since we want to examine the contributions of
-                % each freq band separately and as a whole, we concatenate
-                % in parcels here but the fine the single feature as a
-                % whole later (without single parcel concatenation, which
-                % woud become than redundnant)
-                F = local_add_feature(F, red_mat, ntrials, ...
-                                      nchans, bandName);
-
-                % add the red_mat in the cell, to concatenate them together
-                % in one unitary feature outside the for loop
-                sband_feats_cell{iBand} = red_mat;
+                ThisTrl = freq.powspctrm(itrl, :, :);
+                ThisTrl = ThisTrl(:);
+                TEMP(itrl, :) = ThisTrl;
 
             end
 
-            TEMP = cat(2, sband_feats_cell{:});
-            
+            for ifreq = 1:length(freq.freq)
+
+                this_FREQ = squeeze(freq.powspctrm(:, :, ifreq));
+
+                % add to F structure
+                F = local_add_feature(F, this_FREQ, ntrials, nchans, 'pass_FFT');
+
+            end
+
         case 'alpha_low_gamma_ratio'
 
             lgcl_alpha = (freq.freq>=min(cfg_feats.freqRanges.alpha) & ...
@@ -143,19 +165,9 @@ if cfg_feats.freaqbandfeats_flag
     freqBands = fieldnames(cfg_feats.freqRanges); 
     nBands = length(freqBands); 
 
-    Fs_singlebands = cell(nBands, 1);
-
     for iBand = 1:nBands
-
-        % start a first tic for power
-        tic
-
-        Fband.single_parcels = [];
-        Fband.single_feats = [];
-        Fband.multi_feats = double.empty(ntrials, 0);
     
         % get frequency band name and specify it as strutcture identifier
-        % based on the 
         bandName = freqBands{iBand};
         bandRange = cfg_feats.freqRanges.(bandName);
 
@@ -164,30 +176,6 @@ if cfg_feats.freaqbandfeats_flag
         thisfieldname = [bandName, '_', num2str(min(bandRange)), ...
                         '_', num2str(upbandrange), '_Hz'];
 
-        Fband.bandIdentifier = thisfieldname;
-
-        % this first part, taken from the old freqRange method, compute the
-        % power for the current band, based on the mtmfft.
-        lgc_band = freq.freq>=min(bandRange) & freq.freq<max(bandRange);
-        red_mat = squeeze(mean(freq.powspctrm(:, :, lgc_band), 3));
-
-        if ~isempty(red_mat)
-
-            Fband.single_feats.power = red_mat;
-            % add to F structure
-            Fband = local_add_feature(Fband, red_mat, ntrials, ...
-                                  nchans, bandName);
- 
-
-        else % issue a warning
-
-            warning('empty matrix in %s', thisfieldname)
-
-        end
-
-        % log runtime
-        Fband.runtime.(this_feat) = round(toc, 2);
-
         % bandpass filter in fieldtrip
         cfg_bp = [];
         cfg_bp.bpfilter = 'yes';
@@ -195,22 +183,12 @@ if cfg_feats.freaqbandfeats_flag
 
         dat_bp = ft_preprocessing(cfg_bp, dat);
 
-        % recursion 1: compute time freqs on bandpassed signal 
-        Fband = mv_features_timedomain(cfg_feats, dat_bp, Fband);
-
-        % recursion 2: compute catch22 features on bandpassed signal
-        Fband = mv_wrap_catch22(cfg_feats, dat_bp, Fband);
-
         % local computation: feats based on inst freq
-        Fband = local_inst_freq_feats(dat_bp, Fband, ntrials, nchans);
-
-        Fs_singlebands{iBand} = Fband;
+        F = local_inst_freq_feats(dat_bp, F, ntrials, nchans, thisfieldname);
 
     end
 
 else
-
-    Fs_singlebands = nan;
 
 end
 
@@ -222,12 +200,12 @@ end
 
 function F = local_add_feature(F, origFeat, ntrials, nchans, this_feat)
 
-if strcmp(this_feat, 'covFFT') || strcmp(this_feat, 'freqRanges')
+if strcmp(this_feat, 'covFFT') || strcmp(this_feat, 'freqRanges') || strcmp(this_feat, 'fullFFT')
 
     % on the covFFT feature the channel division does not make sense: the
     % channel dimension has been nulled from the covariance computation.
-    % The freqRanges have instead already appended to the single parcels.
-    % either cases to do that now
+    % The freqRanges & fullFFT have instead already appended to the single parcels.
+
     return
 
 else
@@ -248,9 +226,9 @@ end
 
 
 
-function Fband = local_inst_freq_feats(dat_bp, Fband, ntrials, nchans)
+function F = local_inst_freq_feats(dat_bp, F, ntrials, nchans, fbandIdentifier)
 
-% define smotthing kernel
+% define smoothing kernel
 l_krnl = round(dat_bp.fsample/4);
 krnl_3d = ones(l_krnl, 1, 1)./l_krnl;
 
@@ -266,25 +244,17 @@ mat_trls = dat_bp.fsample/(2*pi)*diff(convn(mat_trls, krnl_3d, 'same'));
 mat_trls = mat_trls(40:end-40, :, :);
 
 % attach features
-Fband.single_feats.IF_mean = squeeze(trimmean(mat_trls, 20))';
-Fband = local_add_feature(Fband, Fband.single_feats.IF_mean, ntrials, nchans, 'IF_mean');
+F.single_feats.([fbandIdentifier '_IF_mean']) = squeeze(trimmean(mat_trls, 20))';
+F = local_add_feature(F, F.single_feats.([fbandIdentifier '_IF_mean']), ...
+    ntrials, nchans, 'IF_mean');
 
-Fband.single_feats.IF_median = squeeze(median(mat_trls))';
-Fband = local_add_feature(Fband, Fband.single_feats.IF_median, ntrials, nchans, 'IF_median');
+F.single_feats.([fbandIdentifier '_IF_median']) = squeeze(median(mat_trls))';
+F = local_add_feature(F, F.single_feats.([fbandIdentifier '_IF_median']), ...
+    ntrials, nchans, 'IF_median');
 
-Fband.single_feats.IF_std = squeeze(std(mat_trls))';
-Fband = local_add_feature(Fband, Fband.single_feats.IF_std, ntrials, nchans, 'IF_std');
-
-
-% tic
-% mat_pre = nan(255, nchans, ntrials);
-% for k1=1:ntrials
-%     for k2=1:nchans
-%         iapf=dat_bp.fsample/(2*pi)*diff(smooth(unwrap(angle(hilbert(dat_bp.trial{k1}(k2,:)))),round(dat_bp.fsample/4)));
-%         mat_pre(:, k2, k1) = iapf;
-%     end
-% end
-% toc
+F.single_feats.([fbandIdentifier '_IF_std']) = squeeze(std(mat_trls))';
+F = local_add_feature(F, F.single_feats.([fbandIdentifier '_IF_std']), ...
+    ntrials, nchans, 'IF_std');
 
 
 end
