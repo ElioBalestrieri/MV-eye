@@ -35,19 +35,16 @@ parfor isubj = 1:nsubjs
     
     %% merge datasets & set config
     % unitary label
-    Y=[ones(length(dat{1}.trial), 1); 2*ones(length(dat{2}.trial), 1)]';
-    % merge
-    cfg = [];
-    dat = ft_appenddata(cfg, dat{1}, dat{2});
+    Y=[ones(length(dat{1}.trial), 1)]; % only Eye closed 2*ones(length(dat{2}.trial), 1)]';
+%     % merge
+%     cfg = [];
+%     dat = ft_appenddata(cfg, dat{1}, dat{2});
+
+    dat = dat{1};
+    
     % call for config
     cfg_feats = mv_features_cfg_theoretical_freqbands();
-    
-    % shuffle
-    rng(1)
-    shffld_idxs = randperm(length(Y));
-    Y = Y(shffld_idxs);
-    dat.trial = dat.trial(shffld_idxs);
-    
+     
     %% scale up data
     
     dat.trial = cellfun(@(x) x*1e11, dat.trial, 'UniformOutput',false);

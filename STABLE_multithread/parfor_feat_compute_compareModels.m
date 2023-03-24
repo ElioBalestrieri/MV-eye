@@ -14,11 +14,7 @@ plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
 catch22_path            = '../../Software/catch22/wrap_Matlab';
 
-% output folders
-out_dat_path          = '../STRG_data';
-if ~isfolder(out_dat_path); mkdir(out_dat_path); end
-
-out_feat_path          = '../STRG_computed_features';
+out_feat_path          = '/remotedata/AgGross/TBraiC/MV-eye/STRG_computed_features/Mdl_comparison';
 if ~isfolder(out_feat_path); mkdir(out_feat_path); end
 
 addpath(helper_functions_path)
@@ -37,7 +33,7 @@ parfor isubj = 1:nsubjs
     ft_defaults;
 
     % filename types for the two datasets: resting state & visual stimulation
-    fname_types = {'_satted_source_VG.mat', '_control_hcpsource_1snolap.mat'};
+    fname_types = {'_control_hcpsource_1snolap.mat', '_satted_source_VG.mat'};
     exp_cond = {'ECEO', 'VS'};
 
     % formatted codename
@@ -87,7 +83,7 @@ parfor isubj = 1:nsubjs
         cfg = [];
         cfg.channel = dat{1}.label(mask_parcel);
 
-        sourcedata = cellfun(@(x) ft_preprocessing(cfg, x), dat, ...
+        dat = cellfun(@(x) ft_preprocessing(cfg, x), dat, ...
             'UniformOutput',false);
         
         % merge datasets & set config
@@ -111,7 +107,9 @@ parfor isubj = 1:nsubjs
 
         ntrials = length(dat.trial);
 
-        for mdl_name = mdls_codes
+        for imdl = 1:length(mdls_codes)
+
+            mdl_name = mdls_codes{imdl};
 
             % initialize Feature structure
     
@@ -121,7 +119,7 @@ parfor isubj = 1:nsubjs
             F.Y = Y;
 
           
-            switch mdl_name{1}
+            switch mdl_name
 
                 case 'FreqBands'
 
@@ -153,7 +151,7 @@ parfor isubj = 1:nsubjs
 
 
             % save
-            fname_out_feat = [subjcode, '_' this_cond '_' mdl_name{1} '.mat'];
+            fname_out_feat = [subjcode, '_' this_cond '_' mdl_name '.mat'];
             saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
 
         end
