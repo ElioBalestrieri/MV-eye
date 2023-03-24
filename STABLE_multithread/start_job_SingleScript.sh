@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=1         # the number of tasks/processes per node
 #SBATCH --cpus-per-task=30          # the number cpus per task
 #SBATCH --partition=normal          # on which partition to submit the job
-#SBATCH --time=16:00:00             # the max wallclock time (time limit your job will run)
+#SBATCH --time=24:00:00             # the max wallclock time (time limit your job will run)
  
  
 #SBATCH --job-name=decodeFreqBands  # the name of your job
@@ -19,4 +19,4 @@ module load scikit-learn/1.0.1
 module load dask
 
 # START THE APPLICATION
-python HPC_decode_cross_subjs.py 
+python HPC_withinsubjs_mdl_compare.py 
