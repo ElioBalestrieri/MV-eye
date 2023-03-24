@@ -138,7 +138,7 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
         DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=mdltypes)
           
         # save
-        fname_out = '../STRG_decoding_accuracy/' + SUBJid + 'leftout_' + imdl + '_intersubjs_accs.csv'    
+        fname_out = '../STRG_decoding_accuracy/' + SUBJid + 'leftout_' + ThisExpCond + '_intersubjs_accs.csv'    
         DF.to_csv(fname_out)
         
         return SUBJid
