@@ -11,11 +11,11 @@
 #SBATCH --array=1-7
  
 # LOAD MODULES HERE IF REQUIRED
-# module load palma/2021b
-# module load GCC/11.2.0
-# module load OpenMPI/4.1.1
-# module load scikit-learn/1.0.1
-# module load dask
+module load palma/2021b
+module load GCC/11.2.0
+module load OpenMPI/4.1.1
+module load scikit-learn/1.0.1
+module load dask
 
 
 # DEFINE ARRAY OF INPUTS 
