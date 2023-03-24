@@ -59,7 +59,7 @@ def _todict(matobj):
 
 #%% concatenate the features across subjects
     
-def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats'):
+def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats', tanh_flag=False):
 
     # define subjects range
     range_subjs = np.arange(strtsubj, endsubj)
@@ -69,15 +69,22 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats'):
     trim_outliers = RobustScaler()
 
 
-    accsubj = 0
+    accsubj = 0; subjID_trials_labels = []
     for isubj in range_subjs:
 
+        SUBJid = [f'ID_{isubj+1:02d}']            
+        
         # load file & extraction
         fname = infold + f'{isubj+1:02d}_' + ftype + '.mat'
         mat_content = loadmat_struct(fname)
         F = mat_content['variableName']
-        
+                
         Y_labels = F['Y']
+
+        # generate subject's trials labels
+        # and append to the common list
+        this_subj_IDlabels = SUBJid*len(Y_labels)
+        subjID_trials_labels = subjID_trials_labels + this_subj_IDlabels
 
         if not best_feats:
             loop_feats = F['single_feats'].keys()
@@ -92,6 +99,9 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats'):
             this_val = F['single_feats'][ifeat]        
             this_val = remove_nan.fit_transform(this_val)
             this_val = trim_outliers.fit_transform(this_val)
+            
+            if tanh_flag:
+                this_val = np.tanh(this_val)
             
             if acc_feat == 0:
 
@@ -127,7 +137,7 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats'):
     print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
           str(strtsubj+1) + ' to ' + str(endsubj+1))
                 
-    return full_X, full_Y
+    return full_X, full_Y, subjID_trials_labels 
     
 
 

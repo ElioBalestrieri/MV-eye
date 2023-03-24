@@ -35,12 +35,12 @@ parfor isubj = 1:nsubjs
     
     %% merge datasets & set config
     % unitary label
-    Y=[ones(length(dat{1}.trial), 1)]; % only Eye closed 2*ones(length(dat{2}.trial), 1)]';
+    Y=2*ones(length(dat{1}.trial), 1); % only Eye closed 2*ones(length(dat{2}.trial), 1)]';
 %     % merge
 %     cfg = [];
 %     dat = ft_appenddata(cfg, dat{1}, dat{2});
 
-    dat = dat{1};
+    dat = dat{2};
     
     % call for config
     cfg_feats = mv_features_cfg_theoretical_freqbands();
