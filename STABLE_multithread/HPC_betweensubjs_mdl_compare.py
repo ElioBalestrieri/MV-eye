@@ -130,14 +130,14 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
             
             LOS_acc = balanced_accuracy_score(Y_test, predict_LOS)
                
-            mat_accs[0, acc_feat] = LOS_acc;
+            mat_accs[0, acc_feat] = LOS_acc
                   
             acc_feat+=1
               
         DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=imdl)
           
         # save
-        fname_out = '../STRG_decoding_accuracy/' + SUBJid + '_leftout_' + ThisExpCond +  '_' + imdl '_intersubjs_accs.csv'
+        fname_out = '../STRG_decoding_accuracy/' + SUBJid + '_leftout_' + ThisExpCond +  '_' + imdl + '_intersubjs_accs.csv'
         DF.to_csv(fname_out)
         
         return SUBJid
