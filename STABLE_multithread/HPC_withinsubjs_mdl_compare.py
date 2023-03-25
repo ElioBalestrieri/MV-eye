@@ -16,6 +16,8 @@ import os
 import dask
 from datetime import datetime
 
+print(sys.argv)
+icond = sys.argv[1]
 
 
 #%% custom functions
@@ -247,47 +249,48 @@ def loop_classify_parcels(single_parcels, Y, pipe, cv_fold=10):
 
 
 @dask.delayed
-def single_subj_classify(isubj, infold, outfold):
+def single_subj_classify(isubj, infold, outfold, icond):
 
     # load parcellation labels and select "visual", compatibly with the parcels previously selected i nMATLAB
     HCP_parcels = pd.read_csv('../helper_functions/HCP-MMP1_UniqueRegionList_RL.csv')
 
-    expconds = ['ECEO', 'VS']; mdltypes = ['FreqBands', 'FullFFT', 'TimeFeats']
+    # expconds = ['ECEO', 'VS'];
+    mdltypes = ['FreqBands', 'FullFFT', 'TimeFeats']
     acc_type = 0
     full_count_exc = 0
-    for icond in expconds:
+    # for icond in expconds:
         
-        for imdl in mdltypes:
-                
-            red_HCP = HCP_parcels[HCP_parcels['cortex'].str.contains('visual', case=False)]
-            
-            fname = infold + f'{isubj+1:02d}_' + icond + '_' + imdl + '.mat'    
-            mat_content = loadmat_struct(fname)
-            F = mat_content['variableName']    
-            Y_labels = F['Y']
-            single_feats = F['single_feats']
-            single_parcels = F['single_parcels']
-    
-            # call loop across all features + aggregated feature
-            subjDF_feats, count_exc1 = loop_classify_feats(single_feats, Y_labels, 
-                                                             class_pipeline)
-    
-            accuracy_svm, parcels_accs_clusts, N_optimal_clusts, count_exc2 = loop_classify_parcels(single_parcels, Y_labels, class_pipeline)
-            
-            red_HCP['clustering_accuracy'] = parcels_accs_clusts
-            red_HCP['N_clusters_detected'] = N_optimal_clusts
-            red_HCP['decoding_accuracy'] = accuracy_svm
-          
-            acc_type += 1
-            
-            foutname_feats = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_feats.csv' 
-            foutname_parcels = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_parcels.csv' 
-    
-            red_HCP.to_csv(foutname_parcels)
-            subjDF_feats.to_csv(foutname_feats)
+    for imdl in mdltypes:
 
-            full_count_exc = full_count_exc + count_exc1 + count_exc2
-            
+        red_HCP = HCP_parcels[HCP_parcels['cortex'].str.contains('visual', case=False)]
+
+        fname = infold + f'{isubj+1:02d}_' + icond + '_' + imdl + '.mat'
+        mat_content = loadmat_struct(fname)
+        F = mat_content['variableName']
+        Y_labels = F['Y']
+        single_feats = F['single_feats']
+        single_parcels = F['single_parcels']
+
+        # call loop across all features + aggregated feature
+        subjDF_feats, count_exc1 = loop_classify_feats(single_feats, Y_labels,
+                                                         class_pipeline)
+
+        accuracy_svm, parcels_accs_clusts, N_optimal_clusts, count_exc2 = loop_classify_parcels(single_parcels, Y_labels, class_pipeline)
+
+        red_HCP['clustering_accuracy'] = parcels_accs_clusts
+        red_HCP['N_clusters_detected'] = N_optimal_clusts
+        red_HCP['decoding_accuracy'] = accuracy_svm
+
+        acc_type += 1
+
+        foutname_feats = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_feats.csv'
+        foutname_parcels = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_parcels.csv'
+
+        red_HCP.to_csv(foutname_parcels)
+        subjDF_feats.to_csv(foutname_feats)
+
+        full_count_exc = full_count_exc + count_exc1 + count_exc2
+
     return full_count_exc
 
 #%% loop pipeline across subjects and features
@@ -297,7 +300,7 @@ nsubjs_loaded = 29
 allsubjs_DFs = []
 for isubj in range(nsubjs_loaded):
 
-    outDF = single_subj_classify(isubj, infold, outfold)
+    outDF = single_subj_classify(isubj, infold, outfold, icond)
     allsubjs_DFs.append(outDF)
     
 #%% actually launch process
