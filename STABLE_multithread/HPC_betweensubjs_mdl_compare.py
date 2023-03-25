@@ -107,8 +107,7 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
             allsubjs_ID = pickle.load(handle)
 
         # preallocate matrix (if first iteration on the loop)
-        if acc_mdl==0:     
-            mat_accs = np.empty((len(mdltypes), len(allsubjs_X)))
+        mat_accs = np.empty((1, len(allsubjs_X)))
 
         # leave the current subject out for testing    
         lgcl_test = [s == SUBJid for s in allsubjs_ID]
@@ -131,14 +130,14 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
             
             LOS_acc = balanced_accuracy_score(Y_test, predict_LOS)
                
-            mat_accs[acc_mdl, acc_feat] = LOS_acc;
+            mat_accs[0, acc_feat] = LOS_acc;
                   
             acc_feat+=1
               
-        DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=mdltypes)
+        DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=imdl)
           
         # save
-        fname_out = '../STRG_decoding_accuracy/' + SUBJid + 'leftout_' + imdl + '_intersubjs_accs.csv'    
+        fname_out = '../STRG_decoding_accuracy/' + SUBJid + '_leftout_' + ThisExpCond +  '_' + imdl '_intersubjs_accs.csv'
         DF.to_csv(fname_out)
         
         return SUBJid
