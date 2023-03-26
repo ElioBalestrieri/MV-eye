@@ -127,24 +127,24 @@ def loop_classify_feats(Xs, Y, pipe, cv_fold=10):
         # UPDATE MATRIX
         storing_mat[0, acc_feat] = acc 
              
-        try:
+        # try:
+        #
+        #     X_cleaned = impute_missing.fit_transform(X)
+        #     X_scaled = scaler.fit_transform(X_cleaned)
+        #     X_squeezed = np.tanh(X_scaled)
+        #
+        #     grid_search_gauss.fit(X_squeezed)
+        #
+        #     N_comps = grid_search_gauss.best_estimator_.n_components;
+        #
+        #     # evaluate congruence
+        #     predicted_labels = grid_search_gauss.best_estimator_.predict(X_squeezed)
+        #     acc_clusts = metrics.rand_score(Y, predicted_labels)
+        #
+        # except:
             
-            X_cleaned = impute_missing.fit_transform(X)
-            X_scaled = scaler.fit_transform(X_cleaned)
-            X_squeezed = np.tanh(X_scaled)
-    
-            grid_search_gauss.fit(X_squeezed)
-
-            N_comps = grid_search_gauss.best_estimator_.n_components;
-            
-            # evaluate congruence 
-            predicted_labels = grid_search_gauss.best_estimator_.predict(X_squeezed)
-            acc_clusts = metrics.rand_score(Y, predicted_labels)
-
-        except:
-            
-            acc_clusts = np.nan; predicted_labels = np.nan; count_exceptions += 1
-            N_comps = np.nan
+        acc_clusts = np.nan; predicted_labels = np.nan; count_exceptions += 1
+        N_comps = np.nan
 
         # UPDATE MATRIX
         storing_mat[1, acc_feat] = acc_clusts
@@ -167,22 +167,22 @@ def loop_classify_feats(Xs, Y, pipe, cv_fold=10):
 
     # compute accuracy on the whole freqbands, aggregated features. Always with
     # a try statement for the same reason listed above
-    try:
-        X_cleaned_whole = impute_missing.fit_transform(catX)
-        X_scaled_whole = scaler.fit_transform(X_cleaned_whole)
-        X_squeezed_whole = np.tanh(X_scaled_whole)
-    
-        grid_search_gauss.fit(X_squeezed_whole)
-
-        N_comps_whole = grid_search_gauss.best_estimator_.n_components;
-            
-        # evaluate congruence 
-        predicted_labels_whole = grid_search_gauss.best_estimator_.predict(X_squeezed_whole)
-        acc_clusts_whole = metrics.rand_score(Y, predicted_labels_whole)
-
-    except:
-        acc_clusts_whole = np.nan; count_exceptions += 1
-        N_comps_whole = np.nan;
+    # try:
+    #     X_cleaned_whole = impute_missing.fit_transform(catX)
+    #     X_scaled_whole = scaler.fit_transform(X_cleaned_whole)
+    #     X_squeezed_whole = np.tanh(X_scaled_whole)
+    #
+    #     grid_search_gauss.fit(X_squeezed_whole)
+    #
+    #     N_comps_whole = grid_search_gauss.best_estimator_.n_components;
+    #
+    #     # evaluate congruence
+    #     predicted_labels_whole = grid_search_gauss.best_estimator_.predict(X_squeezed_whole)
+    #     acc_clusts_whole = metrics.rand_score(Y, predicted_labels_whole)
+    #
+    # except:
+    acc_clusts_whole = np.nan; count_exceptions += 1
+    N_comps_whole = np.nan
 
     storing_mat[1, acc_feat] = acc_clusts_whole
     storing_mat[2, acc_feat] = N_comps_whole
@@ -283,8 +283,8 @@ def single_subj_classify(isubj, infold, outfold, icond):
 
         acc_type += 1
 
-        foutname_feats = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_feats.csv'
-        foutname_parcels = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_parcels.csv'
+        foutname_feats = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_feats_reduced.csv'
+        foutname_parcels = outfold + f'{isubj+1:02d}_' + icond + '_' + imdl + '_parcels_reduced.csv'
 
         red_HCP.to_csv(foutname_parcels)
         subjDF_feats.to_csv(foutname_feats)
