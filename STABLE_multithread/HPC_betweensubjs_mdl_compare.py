@@ -53,7 +53,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 # concatenate files between participant, after within-participant normalization
 
-mdltypes = ['FreqBands', 'FullFFT', 'TimeFeats']
+mdltypes = ['TimeFeats'] # 'FreqBands', 'FullFFT'
 acc_type = 0
 full_count_exc = 0
         
@@ -134,13 +134,13 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
                   
             acc_feat+=1
               
-        DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=imdl)
+        DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=[imdl])
           
         # save
         fname_out = '../STRG_decoding_accuracy/' + SUBJid + '_leftout_' + ThisExpCond +  '_' + imdl + '_intersubjs_accs.csv'
         DF.to_csv(fname_out)
         
-        return SUBJid
+    return SUBJid
           
 
 #%% loop pipeline across subjects and features
