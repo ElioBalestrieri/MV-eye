@@ -59,7 +59,8 @@ def _todict(matobj):
 
 #%% concatenate the features across subjects
     
-def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats', tanh_flag=False):
+def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats', 
+              tanh_flag=False, compress_flag=False):
 
     # define subjects range
     range_subjs = np.arange(strtsubj, endsubj)
@@ -102,6 +103,12 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats', ta
             
             if tanh_flag:
                 this_val = np.tanh(this_val)
+            
+            # compress?
+            if compress_flag:
+                
+                this_val = np.float32(this_val)
+            
             
             if acc_feat == 0:
 

@@ -61,14 +61,15 @@ for imdl in mdltypes:
     
     data_type = ThisExpCond + '_' + imdl
     allsubjs_X, allsubjs_Y, allsubjs_ID = cat_subjs(infold, strtsubj=0, endsubj=29, 
-                                                    ftype=data_type, tanh_flag=True)
+                                                    ftype=data_type, tanh_flag=True, 
+                                                    compress_flag=True)
     
     fname_X = infold + ThisExpCond + '_allsubjs_X_'  + imdl + '.pickle'
     fname_Y = infold + ThisExpCond + '_allsubjs_Y_'  + imdl + '.pickle'
     fname_ID = infold + ThisExpCond + '_allsubjs_ID_'  + imdl + '.pickle'
 
     with open(fname_X, 'wb') as handle:
-        pickle.dump(np.float32(allsubjs_X), handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(allsubjs_X, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(fname_Y, 'wb') as handle:
         pickle.dump(allsubjs_Y, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -90,8 +91,6 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
 
     SUBJid = f'ID_{isubj+1:02d}' 
     
-
-    acc_mdl = 0
     for imdl in mdltypes:
                 
         fname_X = infold + ThisExpCond + '_allsubjs_X_'  + imdl + '.pickle'
@@ -120,7 +119,6 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
         for key in allsubjs_X:
     
             X_ = allsubjs_X[key]
-    
             X_train = X_[lgcl_train, :]
             X_test = X_[lgcl_test, :]
             
