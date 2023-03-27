@@ -53,7 +53,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 # concatenate files between participant, after within-participant normalization
 
-mdltypes = ['TimeFeats'] # 'FreqBands', 'FullFFT'
+mdltypes = ['FullFFT'] # 'FreqBands', 'FullFFT', 'TimeFeats'
 acc_type = 0
 full_count_exc = 0
         
@@ -68,7 +68,7 @@ for imdl in mdltypes:
     fname_ID = infold + ThisExpCond + '_allsubjs_ID_'  + imdl + '.pickle'
 
     with open(fname_X, 'wb') as handle:
-        pickle.dump(allsubjs_X, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(np.float32(allsubjs_X), handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(fname_Y, 'wb') as handle:
         pickle.dump(allsubjs_Y, handle, protocol=pickle.HIGHEST_PROTOCOL)
