@@ -53,7 +53,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 # concatenate files between participant, after within-participant normalization
 
-mdltypes = ['FreqBands', 'FullFFT', 'TimeFeats']
+mdltypes = ['FullFFT'] # 'FreqBands', 'FullFFT', 'TimeFeats'
 acc_type = 0
 full_count_exc = 0
         
@@ -68,7 +68,7 @@ for imdl in mdltypes:
     fname_ID = infold + ThisExpCond + '_allsubjs_ID_'  + imdl + '.pickle'
 
     with open(fname_X, 'wb') as handle:
-        pickle.dump(allsubjs_X, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(np.float32(allsubjs_X), handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(fname_Y, 'wb') as handle:
         pickle.dump(allsubjs_Y, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -107,8 +107,7 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
             allsubjs_ID = pickle.load(handle)
 
         # preallocate matrix (if first iteration on the loop)
-        if acc_mdl==0:     
-            mat_accs = np.empty((len(mdltypes), len(allsubjs_X)))
+        mat_accs = np.empty((1, len(allsubjs_X)))
 
         # leave the current subject out for testing    
         lgcl_test = [s == SUBJid for s in allsubjs_ID]
@@ -131,17 +130,17 @@ def decode_leave_one_subj_out(isubj, infold, ThisExpCond, mdltypes):
             
             LOS_acc = balanced_accuracy_score(Y_test, predict_LOS)
                
-            mat_accs[acc_mdl, acc_feat] = LOS_acc;
+            mat_accs[0, acc_feat] = LOS_acc
                   
             acc_feat+=1
               
-        DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=mdltypes)
+        DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=[imdl])
           
         # save
-        fname_out = '../STRG_decoding_accuracy/' + SUBJid + 'leftout_' + ThisExpCond + '_intersubjs_accs.csv'    
+        fname_out = '../STRG_decoding_accuracy/' + SUBJid + '_leftout_' + ThisExpCond +  '_' + imdl + '_intersubjs_accs.csv'
         DF.to_csv(fname_out)
         
-        return SUBJid
+    return SUBJid
           
 
 #%% loop pipeline across subjects and features
