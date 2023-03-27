@@ -7,7 +7,7 @@
 #SBATCH --time=24:00:00             # the max wallclock time (time limit your job will run)
  
  
-#SBATCH --job-name=decodeFreqBands  # the name of your job
+#SBATCH --job-name=fastVS_fullFFTT  # the name of your job
 #SBATCH --mail-type=ALL             # receive an email when your job starts, finishes normally or is aborted
 #SBATCH --mail-user=elio.balestrieri@gmail.com # your mail address
  

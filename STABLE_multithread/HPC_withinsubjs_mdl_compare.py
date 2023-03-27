@@ -16,9 +16,10 @@ import os
 import dask
 from datetime import datetime
 
-print(sys.argv)
-icond = sys.argv[1]
-
+## comment for speed reduction
+# print(sys.argv)
+# icond = sys.argv[1]
+icond = 'VS'
 
 #%% custom functions
 
@@ -215,29 +216,29 @@ def loop_classify_parcels(single_parcels, Y, pipe, cv_fold=10):
         # get rid of full nan columns, if any
         X = X[:, ~(np.any(np.isnan(X), axis=0))]
             
-        try:
+        # try:
             
-            X_cleaned = impute_missing.fit_transform(X)
-            X_scaled = scaler.fit_transform(X_cleaned)
-            X_squeezed = np.tanh(X_scaled)
+        #     X_cleaned = impute_missing.fit_transform(X)
+        #     X_scaled = scaler.fit_transform(X_cleaned)
+        #     X_squeezed = np.tanh(X_scaled)
     
-            grid_search_gauss.fit(X_squeezed)
+        #     grid_search_gauss.fit(X_squeezed)
 
-            N_comps = grid_search_gauss.best_estimator_.n_components;
+        #     N_comps = grid_search_gauss.best_estimator_.n_components;
             
-            # evaluate congruence 
-            predicted_labels = grid_search_gauss.best_estimator_.predict(X_squeezed)
-            acc_clusts = metrics.rand_score(Y, predicted_labels)
+        #     # evaluate congruence 
+        #     predicted_labels = grid_search_gauss.best_estimator_.predict(X_squeezed)
+        #     acc_clusts = metrics.rand_score(Y, predicted_labels)
 
-        except:
+        # except:
             
-            acc_clusts = np.nan; predicted_labels = np.nan; count_exceptions += 1
+        acc_clusts = np.nan; N_comps = np.nan; count_exceptions += 1
                       
-        try:        
-            acc = cross_val_score(pipe, X, Y, cv=cv_fold, 
-                                  scoring='balanced_accuracy').mean()
-        except:
-            acc = np.nan; count_exceptions += 1
+        # try:        
+        #     acc = cross_val_score(pipe, X, Y, cv=cv_fold, 
+        #                           scoring='balanced_accuracy').mean()
+        # except:
+        acc = np.nan; count_exceptions += 1
                
         accuracy_svm[acc_parcel] = acc
         N_optimal_clusts[acc_parcel] = N_comps
