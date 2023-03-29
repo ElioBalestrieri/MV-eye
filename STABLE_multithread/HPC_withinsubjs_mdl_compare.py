@@ -17,9 +17,8 @@ import dask
 from datetime import datetime
 
 ## comment for speed reduction
-# print(sys.argv)
-# icond = sys.argv[1]
-icond = 'VS'
+print(sys.argv)
+icond = sys.argv[1]
 
 #%% custom functions
 
@@ -256,7 +255,9 @@ def single_subj_classify(isubj, infold, outfold, icond):
     HCP_parcels = pd.read_csv('../helper_functions/HCP-MMP1_UniqueRegionList_RL.csv')
 
     # expconds = ['ECEO', 'VS'];
-    mdltypes = ['FreqBands', 'FullFFT', 'TimeFeats']
+    # mdltypes = ['FreqBands', 'FullFFT', 'TimeFeats']
+    mdltypes = ['FreqBandsSimple']
+
     acc_type = 0
     full_count_exc = 0
     # for icond in expconds:

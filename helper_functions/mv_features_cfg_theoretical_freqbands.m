@@ -17,6 +17,9 @@ cfg_feats.freqRanges = struct('delta', [1, 4], 'theta', [4, 8],   ...
 % freqRanges? (power is also computed here)
 cfg_feats.freaqbandfeats_flag = true;
 
+% compute instantaneous frequency in each freqband (default true)
+cfg_feats.compute_IF = false;
+
 % catch 22?
 cfg_feats.catch22flag = false;
 

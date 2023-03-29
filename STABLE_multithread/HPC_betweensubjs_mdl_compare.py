@@ -53,7 +53,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 # concatenate files between participant, after within-participant normalization
 
-mdltypes = ['FullFFT'] # 'FreqBands', 'FullFFT', 'TimeFeats'
+mdltypes = ['FreqBandsSimple'] # 'FreqBands', 'FullFFT', 'TimeFeats'
 acc_type = 0
 full_count_exc = 0
         

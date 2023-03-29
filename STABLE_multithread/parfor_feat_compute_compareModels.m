@@ -103,7 +103,7 @@ parfor isubj = 1:nsubjs
         dat.trial = cellfun(@(x) x*1e11, dat.trial, 'UniformOutput',false);
 
         % loop through "theoretical" models
-        mdls_codes = {'FreqBands', 'FullFFT', 'TimeFeats'}
+        mdls_codes = {'FreqBands'}; % , 'FullFFT', 'TimeFeats'}
 
         ntrials = length(dat.trial);
 
@@ -151,18 +151,12 @@ parfor isubj = 1:nsubjs
 
 
             % save
-            fname_out_feat = [subjcode, '_' this_cond '_' mdl_name '.mat'];
+            fname_out_feat = [subjcode, '_' this_cond '_' mdl_name 'Simple.mat'];
             saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
 
         end
 
     end
-
-    
-
-    %% compute frequency features
-
-    F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);
 
     % feedback
     fprintf('\n\n######################\n')

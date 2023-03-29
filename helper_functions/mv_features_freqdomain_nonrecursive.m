@@ -11,6 +11,11 @@ else
     end
 end
 
+
+if ~isfield(cfg_feats, 'compute_IF')
+    cfg_feats.compute_IF = true;
+end
+
 % vars needed for future loops
 nchans = length(dat.label);
 ntrials = length(dat.trial);
@@ -160,7 +165,7 @@ end
 
 %% compute a set of features specific for each freq band
 
-if cfg_feats.freaqbandfeats_flag
+if cfg_feats.freaqbandfeats_flag && cfg_feats.compute_IF 
 
     freqBands = fieldnames(cfg_feats.freqRanges); 
     nBands = length(freqBands); 

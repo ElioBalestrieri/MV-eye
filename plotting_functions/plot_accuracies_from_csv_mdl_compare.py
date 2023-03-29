@@ -75,6 +75,49 @@ DF_fullsample_WN = pd.concat(allsubjs_within_DFs, ignore_index=True)
 DF_fullsample_BW = pd.concat(allsubjs_between_DFs, ignore_index=True) 
     
     
+
+#%% plotting
+
+# 2. for each freq band plot the ordered full set of features.
+# moreover, select the best 3 features in each freq band
+
+temp_MdlTypes = ['FullFFT', 'FreqBands']
+DS_WN_BW_list = [DF_fullsample_WN.round(3), DF_fullsample_BW.round(3)]
+list_compname = ['within subj', 'bewteen subj']
+
+
+acc_data = -1
+
+for rounded_DF in DS_WN_BW_list:
+    
+    acc_data += 1
+    name_comp = list_compname[acc_data]
+
+    for iCond in ExpConds:
+        
+        for iMdl in MdlTypes:
+        
+            plt.figure()     
+            this_DF = rounded_DF.loc[rounded_DF['MdlType']==iMdl, :]
+            this_DF = this_DF.loc[this_DF['ExpCond']==iCond]
+        
+            # go to wide format to allow sorting
+            wide_DF = pd.pivot(this_DF, index='subjID', columns='feature', 
+                               values='decoding_accuracy')    
+            new_idx = wide_DF.mean().sort_values(ascending=False)
+            wide_DF = wide_DF.reindex(new_idx.index, axis=1)
+            
+            # plot
+            ax = sns.barplot(data=wide_DF, orient='h',
+                             palette="ch:start=.2,rot=-.3, dark=.4")
+            
+            plt.tight_layout()
+            plt.title(name_comp + ' SVM,\n' + iCond + ', ' +  iMdl)
+            plt.xlabel('balanced accuracy')
+            plt.xlim((.5, 1))
+        
+    
+    
 #%% stats & plots
 # 1. compare the full set of features in 3 different conditions: fullFFT, FreqBands
 # TimeFeats
