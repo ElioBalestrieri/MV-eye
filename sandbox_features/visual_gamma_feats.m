@@ -47,10 +47,10 @@ dat = ft_resampledata(cfg, dat);
 
 
 % redefine trials for pre and post stim segments
-cfg_pre.toilim = [-1, 0];
+cfg_pre.toilim = [-1, 0-1/cfg.resamplefs];
 dat_pre = ft_redefinetrial(cfg_pre, dat);
 
-cfg_stim.toilim = [1, 2];
+cfg_stim.toilim = [1, 2-1/cfg.resamplefs];
 dat_stim = ft_redefinetrial(cfg_stim, dat);
 
 dat = {dat_pre, dat_stim};
@@ -92,15 +92,17 @@ F.Y = Y;
 
 F_whitened = F;
 
-%% periodic & aperiodic
-
-F = mv_periodic_aperiodic(cfg_feats, dat, F);
-F_whitened = mv_periodic_aperiodic(cfg_feats, whitened_dat, F_whitened);
 
 %% compute frequency features
 
 F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);
 F_whitened = mv_features_freqdomain_nonrecursive(cfg_feats, whitened_dat, F_whitened);
+
+%% periodic & aperiodic
+
+F = mv_periodic_aperiodic(cfg_feats, dat, F);
+F_whitened = mv_periodic_aperiodic(cfg_feats, whitened_dat, F_whitened);
+
 
 %% compute time features
 

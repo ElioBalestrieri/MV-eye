@@ -20,7 +20,7 @@ plt.close('all')
 #%% single subjects
 
 ExpConds = ['ECEO', 'VS'] 
-MdlTypes = ['FullFFT', 'FreqBands', 'FreqBandsSimple', 'TimeFeats']
+MdlTypes = ['FullFFT', 'FreqBands', 'FreqBandsSimple', 'TimeFeats', 'FTM']
 
 up_to_subj = 29
 
