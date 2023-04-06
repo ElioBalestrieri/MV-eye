@@ -28,10 +28,10 @@ from mv_python_utils import cat_subjs
 #%% folder(s) definition & cond type
 
 #input folder 
-infold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_computed_features/Mdl_comparison/'
+infold = '../STRG_computed_features/'
 
 # output folder
-outfold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_decoding_accuracy/'
+outfold = '../STRG_decoding_accuracy/'
 if not(os.path.isdir(outfold)):
     os.mkdir(outfold)
 
