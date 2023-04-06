@@ -25,14 +25,13 @@ sys.path.append('../helper_functions')
 from mv_python_utils import cat_subjs
 
 
-
 #%% folder(s) definition & cond type
 
 #input folder 
-infold = '../STRG_computed_features/'
+infold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_computed_features/Mdl_comparison/'
 
 # output folder
-outfold = '../STRG_decoding_accuracy/'
+outfold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_decoding_accuracy/'
 if not(os.path.isdir(outfold)):
     os.mkdir(outfold)
 
@@ -53,7 +52,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 # concatenate files between participant, after within-participant normalization
 
-mdltypes = ['FreqBandsSimple'] # 'FreqBands', 'FullFFT', 'TimeFeats'
+mdltypes = ['FTM', 'FreqBands', 'FullFFT', 'TimeFeats']
 acc_type = 0
 full_count_exc = 0
         

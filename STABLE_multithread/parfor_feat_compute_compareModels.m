@@ -7,8 +7,9 @@ clc
 
 % input and packages
 fieldtrip_path          = '~/toolboxes/fieldtrip-20221223';
-data_paths               = {'/remotedata/AgGross/Fasting/NC/resultsNC/resting_state/source/lcmv', ...
-                            '/remotedata/AgGross/Fasting/NC/resultsNC/visual_gamma/source'};
+data_paths               = {'/remotedata/AgGross/Fasting/NC/resultsNC/visual_gamma/source', ...
+                            '/remotedata/AgGross/Fasting/NC/resultsNC/resting_state/source/lcmv', ...
+                            };
 helper_functions_path   = '../helper_functions/';
 plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
@@ -33,8 +34,8 @@ parfor isubj = 1:nsubjs
     ft_defaults;
 
     % filename types for the two datasets: resting state & visual stimulation
-    fname_types = {'_control_hcpsource_1snolap.mat', '_satted_source_VG.mat'};
-    exp_cond = {'ECEO', 'VS'};
+    fname_types = {'_satted_source_VG.mat', '_control_hcpsource_1snolap.mat'};
+    exp_cond = {'VS', 'ECEO'};
 
     % formatted codename
     subjcode = sprintf('%0.2d', isubj);
@@ -59,11 +60,11 @@ parfor isubj = 1:nsubjs
 
                 % redefine trials for pre and post stim segments
                 cfg_pre = [];
-                cfg_pre.toilim = [-1, 0];
+                cfg_pre.toilim = [-1, 0-1./cfg.resamplefs];
                 dat_pre = ft_redefinetrial(cfg_pre, sourcedata);
     
                 cfg_stim = [];
-                cfg_stim.toilim = [1, 2];
+                cfg_stim.toilim = [1, 2-1./cfg.resamplefs];
                 dat_stim = ft_redefinetrial(cfg_stim, sourcedata);
     
                 % merge the data together in a format that allows
@@ -103,7 +104,7 @@ parfor isubj = 1:nsubjs
         dat.trial = cellfun(@(x) x*1e11, dat.trial, 'UniformOutput',false);
 
         % loop through "theoretical" models
-        mdls_codes = {'FreqBands'}; % , 'FullFFT', 'TimeFeats'}
+        mdls_codes = {'FTM', 'FullFFT', 'TimeFeats', 'FreqBands'};
 
         ntrials = length(dat.trial);
 
@@ -121,6 +122,12 @@ parfor isubj = 1:nsubjs
           
             switch mdl_name
 
+                case 'FTM'
+
+                    % call for config
+                    cfg_feats = mv_features_cfg_FTM();
+                    F = mv_features_timedomain(cfg_feats, dat, F);
+
                 case 'FreqBands'
 
                     % call for config
@@ -134,7 +141,6 @@ parfor isubj = 1:nsubjs
                     cfg_feats = mv_features_cfg();
                     F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);
     
-
                 case 'TimeFeats'
 
                     % call for config
@@ -151,7 +157,7 @@ parfor isubj = 1:nsubjs
 
 
             % save
-            fname_out_feat = [subjcode, '_' this_cond '_' mdl_name 'Simple.mat'];
+            fname_out_feat = [subjcode, '_' this_cond '_' mdl_name '.mat'];
             saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
 
         end

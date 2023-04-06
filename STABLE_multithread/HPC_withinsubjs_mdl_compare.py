@@ -77,10 +77,10 @@ class_pipeline = Pipeline([('inpute_missing', SimpleImputer(missing_values=np.na
 #%% folder(s) definition
 
 #input folder 
-infold = '../STRG_computed_features/'
+infold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_computed_features/Mdl_comparison/'
 
 # output folder
-outfold = '../STRG_decoding_accuracy/'
+outfold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_decoding_accuracy/'
 if not(os.path.isdir(outfold)):
     os.mkdir(outfold)
 
@@ -255,9 +255,8 @@ def single_subj_classify(isubj, infold, outfold, icond):
     HCP_parcels = pd.read_csv('../helper_functions/HCP-MMP1_UniqueRegionList_RL.csv')
 
     # expconds = ['ECEO', 'VS'];
-    # mdltypes = ['FreqBands', 'FullFFT', 'TimeFeats']
-    mdltypes = ['FreqBandsSimple']
-
+    mdltypes = ['FTM', 'FreqBands', 'FullFFT', 'TimeFeats']
+    
     acc_type = 0
     full_count_exc = 0
     # for icond in expconds:
