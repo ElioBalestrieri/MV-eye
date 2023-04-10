@@ -255,7 +255,7 @@ def single_subj_classify(isubj, infold, outfold, icond):
     HCP_parcels = pd.read_csv('../helper_functions/HCP-MMP1_UniqueRegionList_RL.csv')
 
     # expconds = ['ECEO', 'VS'];
-    mdltypes = ['FTM', 'FreqBands', 'FullFFT', 'TimeFeats']
+    mdltypes = ['FB_2M', 'FB_3M', 'FB_4M', 'FB_cherrypicked', 'cherrypicked']
     
     acc_type = 0
     full_count_exc = 0

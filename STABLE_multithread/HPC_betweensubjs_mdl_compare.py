@@ -52,7 +52,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 # concatenate files between participant, after within-participant normalization
 
-mdltypes = ['FTM', 'FreqBands', 'FullFFT', 'TimeFeats']
+mdltypes = ['FB_2M', 'FB_3M', 'FB_4M', 'FB_cherrypicked', 'cherrypicked']
 acc_type = 0
 full_count_exc = 0
         
