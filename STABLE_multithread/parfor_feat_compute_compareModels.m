@@ -40,7 +40,7 @@ parfor isubj = 1:nsubjs
     % formatted codename
     subjcode = sprintf('%0.2d', isubj);
 
-    for icond = 1:2
+    for icond = 2%:2
         
         this_cond = exp_cond{icond}; this_ftype = fname_types{icond};
         fname_in = ['S' subjcode this_ftype];
@@ -90,6 +90,10 @@ parfor isubj = 1:nsubjs
         % merge datasets & set config
         % unitary label
         Y=[ones(length(dat{1}.trial), 1); 2*ones(length(dat{2}.trial), 1)]';
+
+        % original trial ordering
+        trl_order = [1:length(dat{1}.trial), 1:length(dat{2}.trial)]
+
         % merge
         cfg = [];
         dat = ft_appenddata(cfg, dat{1}, dat{2});
@@ -98,13 +102,15 @@ parfor isubj = 1:nsubjs
         rng(1)
         shffld_idxs = randperm(length(Y));
         Y = Y(shffld_idxs);
+        trl_order = trl_order(shffld_idxs);
         dat.trial = dat.trial(shffld_idxs);
 
         % scale up data  
         dat.trial = cellfun(@(x) x*1e11, dat.trial, 'UniformOutput',false);
 
         % loop through "theoretical" models
-        mdls_codes = {'FTM', 'FullFFT', 'TimeFeats', 'FreqBands'};
+        mdls_codes = {'FB_2M', 'FB_3M', 'FB_4M', 'FB_cherrypicked', ...
+                      'cherrypicked'};
 
         ntrials = length(dat.trial);
 
@@ -118,11 +124,44 @@ parfor isubj = 1:nsubjs
             F.single_feats = [];
             F.multi_feats = double.empty(ntrials, 0);
             F.Y = Y;
-
+            F.trl_order = trl_order;
           
             switch mdl_name
 
-                case 'FTM'
+                case 'FB_2M'
+
+                    cfg_feats = mv_features_cfg_theoretical_freqbands();
+                    cfg_feats.time = {'mean', 'std'};
+                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
+
+                case 'FB_3M'
+
+                    cfg_feats = mv_features_cfg_theoretical_freqbands();
+                    cfg_feats.time = {'mean', 'std', 'skewness'};
+                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
+
+
+                case 'FB_4M'
+
+                    cfg_feats = mv_features_cfg_theoretical_freqbands();
+                    cfg_feats.time = {'mean', 'std', 'skewness', 'kurtosis'};
+                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
+
+                case 'FB_cherrypicked'
+
+                    cfg_feats = mv_features_cfg_theoretical_freqbands();
+                    cfg_feats.time = {'MCL', 'CO_HistogramAMI_even_2_5'};
+                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
+
+
+                case 'cherrypicked'
+
+                    cfg_feats = mv_features_cfg();
+                    cfg_feats.time = {'MCL', 'CO_HistogramAMI_even_2_5'};
+                    F = mv_features_timedomain(cfg_feats, dat, F);
+
+
+                case 'timedomain_2M'
 
                     % call for config
                     cfg_feats = mv_features_cfg_FTM();
