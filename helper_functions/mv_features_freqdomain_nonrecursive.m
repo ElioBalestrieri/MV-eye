@@ -23,6 +23,10 @@ ntrials = length(dat.trial);
 % spectra computation (common to all features)
 freq = ft_freqanalysis(cfg_feats.cfg_FFT,dat);
 
+% append freq field to F
+F.FFTpars.freqs = freq.freq;
+F.FFTpars.dimord = freq.dimord;
+
 % compute power separately for each frequency band and add it as a feature
 freqBands = fieldnames(cfg_feats.freqRanges); 
 nBands = length(freqBands); 

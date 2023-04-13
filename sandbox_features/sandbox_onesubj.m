@@ -75,6 +75,16 @@ F.Y = Y;
 
 F_whitened = F;
 
+%% moments
+
+cfg_feats = mv_features_cfg_theoretical_freqbands();
+cfg_feats.time = {'mean', 'std'};
+F = mv_features_moments_freqbands(cfg_feats, dat, F);
+
+
+
+
+
 %% compute frequency features
 
 F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);

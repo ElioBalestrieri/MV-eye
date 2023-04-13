@@ -56,8 +56,8 @@ best_feats = ['MCL', 'std']
 for iBPcond in freqbands:
 
     # generate datasets
-    full_train_X, full_train_Y = cat_subjs(infold, best_feats=best_feats, strtsubj=0, endsubj=22, ftype=iBPcond)
-    full_test_X, full_test_Y = cat_subjs(infold, best_feats=best_feats, strtsubj=22, endsubj=29, ftype=iBPcond)
+    full_train_X, full_train_Y, foo = cat_subjs(infold, best_feats=best_feats, strtsubj=0, endsubj=22, ftype=iBPcond)
+    full_test_X, full_test_Y, foo = cat_subjs(infold, best_feats=best_feats, strtsubj=22, endsubj=29, ftype=iBPcond)
 
     list_dsets = [full_train_X, full_train_Y, full_test_X, full_test_Y]
     set_names = ['train', 'test']; set_types = ['X', 'Y']
