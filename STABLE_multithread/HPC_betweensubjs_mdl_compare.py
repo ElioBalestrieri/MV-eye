@@ -59,7 +59,7 @@ full_count_exc = 0
 for imdl in mdltypes:
     
     data_type = ThisExpCond + '_' + imdl
-    allsubjs_X, allsubjs_Y, allsubjs_ID = cat_subjs(infold, strtsubj=0, endsubj=29, 
+    allsubjs_X, allsubjs_Y, allsubjs_ID, full_trl_order = cat_subjs(infold, strtsubj=0, endsubj=29, 
                                                     ftype=data_type, tanh_flag=True, 
                                                     compress_flag=True)
     

@@ -37,8 +37,8 @@ hyperoptimizeflag = False
 
 #%% generate datasets
 
-full_train_X, full_train_Y = cat_subjs(infold, best_feats, strtsubj=0, endsubj=22)
-test_leftout_X, test_leftout_Y = cat_subjs(infold, best_feats, strtsubj=22, endsubj=29)
+full_train_X, full_train_Y, foo = cat_subjs(infold, best_feats, strtsubj=0, endsubj=22)
+test_leftout_X, test_leftout_Y, foo = cat_subjs(infold, best_feats, strtsubj=22, endsubj=29)
 
 
 #%% Pipeline object definition

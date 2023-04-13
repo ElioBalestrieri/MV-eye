@@ -79,8 +79,12 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats',
         fname = infold + f'{isubj+1:02d}_' + ftype + '.mat'
         mat_content = loadmat_struct(fname)
         F = mat_content['variableName']
-                
+        
+        # condition labels        
         Y_labels = F['Y']
+        
+        # original trial order before reshuffling
+        trl_order = F['trl_order']        
 
         # generate subject's trials labels
         # and append to the common list
@@ -127,11 +131,13 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats',
         if isubj == strtsubj:
             
             full_Y = Y_labels
+            full_trl_order = trl_order
             full_X = subj_dict
 
         else:
             
             full_Y = np.concatenate((full_Y, Y_labels), axis=0)
+            full_trl_order = np.concatenate((full_trl_order, trl_order), axis=0)
 
             for key in subj_dict:
                 
@@ -144,7 +150,7 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats',
     print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
           str(strtsubj+1) + ' to ' + str(endsubj+1))
                 
-    return full_X, full_Y, subjID_trials_labels 
+    return full_X, full_Y, subjID_trials_labels, full_trl_order
     
 
 
