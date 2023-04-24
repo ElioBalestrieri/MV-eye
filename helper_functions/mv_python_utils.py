@@ -284,7 +284,7 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
 
     if pca_kept_var:
                 
-        acc_feat = 0
+        acc_feat = 0; list_PC_identifiers = []
         for key in loop_feats: # call the loop feats, so that "aggregate" is not included. we create a new aggregate by concatenating the PCs
              
             my_PCA = PCA(n_components=.9, svd_solver='full')
@@ -297,6 +297,12 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
             PC_Xtrain = my_PCA.transform(X_train)
             PC_Xtest = my_PCA.transform(X_test)
             
+            # get shape to assign feats IDs
+            for PCidx in range(PC_Xtrain.shape[1]):
+                
+                PCnum=f'{PCidx+1:02d}'
+                list_PC_identifiers.append(key + '_PC' + PCnum)
+                           
             full_X_train.update({'PC_' + key : PC_Xtrain})
             full_X_test.update({'PC_' + key : PC_Xtest})
 
@@ -313,9 +319,14 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
                 aggregate_test = np.concatenate((aggregate_test, 
                                                  PC_Xtest), axis=1)
 
+            acc_feat += 1
         
         full_X_train.update({'PC_aggregate' : aggregate_train})
         full_X_test.update({'PC_aggregate' : aggregate_test})
+
+        full_X_train.update({'list_PC_identifiers' : list_PC_identifiers})
+        full_X_test.update({'list_PC_identifiers' : list_PC_identifiers})
+        
 
     return full_X_train, full_X_test, full_Y_train, full_Y_test
 
