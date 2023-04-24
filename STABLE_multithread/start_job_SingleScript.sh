@@ -12,10 +12,10 @@
 #SBATCH --mail-user=elio.balestrieri@gmail.com # your mail address
  
 # LOAD MODULES HERE IF REQUIRED
-module load palma/2021b
-module load GCC/11.2.0
-module load OpenMPI/4.1.1
-module load scikit-learn/1.0.1
+module load palma/2022a
+module load GCC/11.3.0
+module load OpenMPI/4.1.4
+module load scikit-learn/1.1.2
 module load dask
 
 # START THE APPLICATION
