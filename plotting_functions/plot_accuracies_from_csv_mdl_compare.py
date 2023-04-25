@@ -14,13 +14,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pingouin as pg
 
-infold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_decoding_accuracy/'
+infold = '../STRG_decoding_accuracy/'
 plt.close('all')
 
 #%% single subjects
 
 ExpConds = ['ECEO', 'VS'] 
-MdlTypes = ['FullFFT', 'FreqBands', 'FreqBandsSimple', 'TimeFeats', 'FTM']
+MdlTypes = ['FullFFT', 'FreqBands', 'TimeFeats'] #, 'FB_cherrypicked', 'cherrypicked']
 
 up_to_subj = 29
 
@@ -81,7 +81,7 @@ DF_fullsample_BW = pd.concat(allsubjs_between_DFs, ignore_index=True)
 # 2. for each freq band plot the ordered full set of features.
 # moreover, select the best 3 features in each freq band
 
-temp_MdlTypes = ['TimeFeats', 'FreqBandsSimple']
+temp_MdlTypes = ['TimeFeats', 'FreqBands']
 DS_WN_BW_list = [DF_fullsample_WN.round(3), DF_fullsample_BW.round(3)]
 list_compname = ['within subj', 'bewteen subj']
 
@@ -89,34 +89,34 @@ list_compname = ['within subj', 'bewteen subj']
 acc_data = -1
 
 for rounded_DF in DS_WN_BW_list:
-    
+
     acc_data += 1
     name_comp = list_compname[acc_data]
 
     for iCond in ExpConds:
-        
+
         for iMdl in temp_MdlTypes:
-        
-            plt.figure()     
+
+            # plt.figure()
             this_DF = rounded_DF.loc[rounded_DF['MdlType']==iMdl, :]
             this_DF = this_DF.loc[this_DF['ExpCond']==iCond]
-        
+
             # go to wide format to allow sorting
-            wide_DF = pd.pivot(this_DF, index='subjID', columns='feature', 
-                               values='decoding_accuracy')    
+            wide_DF = pd.pivot(this_DF, index='subjID', columns='feature',
+                               values='decoding_accuracy')
             new_idx = wide_DF.mean().sort_values(ascending=False)
             wide_DF = wide_DF.reindex(new_idx.index, axis=1)
-            
-            # plot
-            ax = sns.barplot(data=wide_DF, orient='h',
-                             palette="ch:start=.2,rot=-.3, dark=.4")
-            
-            plt.tight_layout()
-            plt.title(name_comp + ' SVM,\n' + iCond + ', ' +  iMdl)
-            plt.xlabel('balanced accuracy')
-            plt.xlim((.5, 1))
-        
-    
+
+            # # plot
+            # ax = sns.barplot(data=wide_DF, orient='h',
+            #                  palette="ch:start=.2,rot=-.3, dark=.4")
+            #
+            # plt.tight_layout()
+            # plt.title(name_comp + ' SVM,\n' + iCond + ', ' +  iMdl)
+            # plt.xlabel('balanced accuracy')
+            # plt.xlim((.5, 1))
+
+            # plt.show()
     
 #%% stats & plots
 # 1. compare the full set of features in 3 different conditions: fullFFT, FreqBands
@@ -129,40 +129,59 @@ DF_full_set_WN = DF_fullsample_WN.loc[DF_fullsample_WN['feature']=='full_set', :
 aov_Mdl_WN = pg.rm_anova(data=DF_full_set_WN, dv='decoding_accuracy', 
                               within=['MdlType', 'ExpCond'], subject='subjID',
                               detailed=False)        
-aov_Mdl_WN.round(3)
+print('\nANOVA within (full)')
+print(aov_Mdl_WN.round(3).to_string())
             
 
-mask_ = (DF_fullsample_WN['feature']=='full_set') & ((DF_fullsample_WN['MdlType']=='FreqBandsSimple') | (DF_fullsample_WN['MdlType']=='TimeFeats'))
+mask_ = (DF_fullsample_WN['feature']=='full_set') & ((DF_fullsample_WN['MdlType']=='FreqBands') | (DF_fullsample_WN['MdlType']=='TimeFeats'))
 restricted_WN = DF_fullsample_WN.loc[mask_, :]
 aov_Mdl_WN_restr = pg.rm_anova(data=restricted_WN, dv='decoding_accuracy', 
                               within=['MdlType', 'ExpCond'], subject='subjID',
-                              detailed=False)        
-aov_Mdl_WN_restr.round(3)
+                              detailed=False)
+print('\nANOVA within (FreqBands & TimeFeats only)')
+print(aov_Mdl_WN_restr.round(3).to_string())
 
 
 ttest_FreqTime_WN = pg.ttest(DF_full_set_WN['decoding_accuracy'].loc[
-                                        DF_full_set_WN['MdlType']=='FreqBandsSimple'], 
+                                        DF_full_set_WN['MdlType']=='FreqBands'],
                             DF_full_set_WN['decoding_accuracy'].loc[
                                         DF_full_set_WN['MdlType']=='TimeFeats'], 
                             paired=True)
-ttest_FreqTime_WN.round(3)
+print('\nTTest within FreqBands vs TimeFeats')
+print(ttest_FreqTime_WN.round(3).to_string())
+
 
 ttest_FreqTime_VS_WN = pg.ttest(DF_full_set_WN['decoding_accuracy'].loc[
-    (DF_full_set_WN['MdlType']=='FreqBandsSimple') & (DF_full_set_WN['ExpCond']=='VS')], 
+    (DF_full_set_WN['MdlType']=='FreqBands') & (DF_full_set_WN['ExpCond']=='VS')],
                             DF_full_set_WN['decoding_accuracy'].loc[
     (DF_full_set_WN['MdlType']=='TimeFeats') & (DF_full_set_WN['ExpCond']=='VS')], 
                             paired=True)
+print('\nTTest within FreqBands vs TimeFeats in Visual Stimulation')
+print(ttest_FreqTime_VS_WN.round(3).to_string())
 
-ttest_FreqTime_VS_WN.round(3)
+
+
+
+
+
+
+
+ttest_FreqTime_VS_WN = pg.ttest(DF_fullsample_WN['decoding_accuracy'].loc[
+    (DF_fullsample_WN['MdlType']=='FreqBands') & (DF_fullsample_WN['ExpCond']=='ECEO') & (DF_fullsample_WN['feature']=='full_set')],
+                            DF_fullsample_WN['decoding_accuracy'].loc[
+    (DF_fullsample_WN['MdlType']=='TimeFeats') & (DF_fullsample_WN['ExpCond']=='ECEO') & (DF_fullsample_WN['feature']=='MCL')],
+                            paired=True)
+print('\nTTest within FreqBands vs MCL in ECEO')
+print(ttest_FreqTime_VS_WN.round(3).to_string())
 
 
 ttest_FreqTime_ECEO_WN = pg.ttest(DF_full_set_WN['decoding_accuracy'].loc[
-    (DF_full_set_WN['MdlType']=='FreqBandsSimple') & (DF_full_set_WN['ExpCond']=='ECEO')], 
+    (DF_full_set_WN['MdlType']=='FreqBands') & (DF_full_set_WN['ExpCond']=='ECEO')],
                             DF_full_set_WN['decoding_accuracy'].loc[
     (DF_full_set_WN['MdlType']=='TimeFeats') & (DF_full_set_WN['ExpCond']=='ECEO')], 
                             paired=True)
-
-ttest_FreqTime_ECEO_WN.round(3)
+print('\nTTest within FreqBands vs TimeFeats in ECEO')
+print(ttest_FreqTime_ECEO_WN.round(3).to_string())
 
 
 
@@ -170,46 +189,62 @@ ttest_FreqTime_ECEO_WN.round(3)
 DF_full_set_BW = DF_fullsample_BW.loc[DF_fullsample_BW['feature']=='aggregate', :]
 aov_Mdl_BW = pg.rm_anova(data=DF_full_set_BW, dv='decoding_accuracy', 
                               within=['MdlType', 'ExpCond'], subject='subjID')        
-aov_Mdl_BW.round(3)    
+print('\nANOVA between (full)')
+print(aov_Mdl_BW.round(3).to_string())
 
 ttest_FreqTime_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
                                 DF_full_set_BW['MdlType']=='FreqBands'], 
                             DF_full_set_BW['decoding_accuracy'].loc[
                                 DF_full_set_BW['MdlType']=='TimeFeats'], 
                             paired=True)
-ttest_FreqTime_BW.round(3)
+print('\nTTest between FreqBands vs TimeFeats')
+print(ttest_FreqTime_BW.round(3).to_string())
 
 ttest_FFTtime_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
                                 DF_full_set_BW['MdlType']=='FullFFT'], 
                             DF_full_set_BW['decoding_accuracy'].loc[
                                 DF_full_set_BW['MdlType']=='TimeFeats'], 
                             paired=True)
-ttest_FFTtime_BW.round(3)
+print('\nTTest between FullFFT vs TimeFeats')
+print(ttest_FFTtime_BW.round(3).to_string())
 
-
-
-ttest_FFTtime_VS_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
+ttest_FreqBandstime_VS_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
     (DF_full_set_BW['MdlType']=='FreqBands') & (DF_full_set_BW['ExpCond']=='VS')], 
                             DF_full_set_BW['decoding_accuracy'].loc[
     (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='VS')], 
                             paired=True)
+print('\nTTest between FreqBands vs TimeFeats in Visual Stimulation')
+print(ttest_FreqBandstime_VS_BW.round(3).to_string())
 
-ttest_FFTtime_VS_BW.round(3)
 
-
-ttest_FreqsTime_VS_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
+ttest_FreqsTime_ECEO_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
     (DF_full_set_BW['MdlType']=='FreqBands') & (DF_full_set_BW['ExpCond']=='ECEO')], 
                             DF_full_set_BW['decoding_accuracy'].loc[
     (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='ECEO')], 
                             paired=True)
+print('\nTTest within FreqBands vs TimeFeats in ECEO')
+print(ttest_FreqsTime_ECEO_BW.round(3).to_string())
 
-ttest_FreqsTime_VS_BW.round(3)
+ttest_FFTTimeFeats_VS_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
+    (DF_full_set_BW['MdlType']=='FullFFT') & (DF_full_set_BW['ExpCond']=='VS')],
+                            DF_full_set_BW['decoding_accuracy'].loc[
+    (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='VS')],
+                            paired=True)
+print('\nTTest between FFT vs TimeFeats in Visual Stimulation')
+print(ttest_FFTTimeFeats_VS_BW.round(3).to_string())
 
+ttest_FFtTimeFeats_ECEO_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
+    (DF_full_set_BW['MdlType']=='FullFFT') & (DF_full_set_BW['ExpCond']=='ECEO')],
+                            DF_full_set_BW['decoding_accuracy'].loc[
+    (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='ECEO')],
+                            paired=True)
+print('\nTTest between FullFFT vs TimeFeats in ECEO')
+print(ttest_FFtTimeFeats_ECEO_BW.round(3).to_string())
 
 
 # subplot within
 plt.figure()
-plt.subplot(121)
+plt.subplot(211)
 ax = sns.barplot(data=DF_full_set_WN.round(3), y='decoding_accuracy', x='MdlType',
                  hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
 
@@ -219,7 +254,7 @@ plt.tight_layout()
 plt.legend([],[], frameon=False)
 
 # subplot within
-plt.subplot(122)
+plt.subplot(212)
 ax = sns.barplot(data=DF_full_set_BW, y='decoding_accuracy', x='MdlType',
             hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
 plt.ylim((.5, 1))
@@ -227,13 +262,14 @@ plt.ylim((.5, 1))
 plt.title('Features type\n between subjects (LOO) accuracy')
 plt.tight_layout()
 
+plt.show()
 
 #%% explore top 10 single features in every subcondition
 
 list_DFs_BW_WN = [DF_fullsample_BW, DF_fullsample_WN] 
 CompTypes = ['between', 'within']
 ExpConds = ['ECEO', 'VS'] # repeated for code readability
-MdlTypes = ['FullFFT', 'FreqBands', 'TimeFeats', 'FreqBandsSimple']
+MdlTypes = ['FullFFT', 'FreqBands', 'TimeFeats', 'FreqBands']
 
 acc_comp = -1
 for iComp in list_DFs_BW_WN:
@@ -286,6 +322,7 @@ for iComp in list_DFs_BW_WN:
 
         plt.tight_layout()
 
+        plt.show()
 
 # #%% 3. plot the best feats within subjects and bands
 
