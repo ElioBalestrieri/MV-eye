@@ -60,14 +60,14 @@ for ThisExpCond in ExpConds:
         data_type = ThisExpCond + '_' + imdl
         fullX_train, fullX_test, Y_train, Y_test = cat_subjs_train_test(infold, strtsubj=0, endsubj=29, 
                                                                 ftype=data_type, tanh_flag=True, 
-                                                                compress_flag=True, pca_kept_var=.9)
+                                                                compress_flag=True, pca_kept_var=.9)     
         L_Xtrain.append(fullX_train['PC_aggregate'])
         L_Xtest.append(fullX_test['PC_aggregate'])
         PC_IDs.append(fullX_train['list_PC_identifiers'])
         
     mergedMdls_train = np.concatenate(L_Xtrain, axis=1)
     mergedMdls_test = np.concatenate(L_Xtest, axis=1)
-    merged_IDs = PC_IDs[0] + PC_IDs[1] 
+    merged_IDs = np.array(PC_IDs[0] + PC_IDs[1]) 
     
     # define selector
     SeqSel = SequentialFeatureSelector(rbf_svm, n_features_to_select='auto', 
