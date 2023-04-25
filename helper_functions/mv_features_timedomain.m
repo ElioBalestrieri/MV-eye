@@ -15,6 +15,15 @@ end
 nchans = length(dat.label);
 ntrials = length(dat.trial);
 
+% this function could be called also in combination with other previous
+% operations (such as, bandpassing). Allow to merge this info in order to
+% maintain a separation between features computed in different cases
+if ~isfield(cfg_feats, 'meta_identifier')
+    meta_ = '';
+else
+    meta_ = [cfg_feats.meta_identifier, '_'];
+end
+
 % initiate switch loop for features
 
 % note: since many features will be computed, I decided to use only one
@@ -176,6 +185,20 @@ for ifeat = cfg_feats.time
 
             end
 
+        case 'CO_HistogramAMI_even_2_5'
+
+           for itrial =1:ntrials
+
+                for ichan = 1:nchans
+
+                    x_ts = dat.trial{itrial}(ichan, :);
+                        
+                    TEMP(itrial, ichan) = catch22_CO_HistogramAMI_even_2_5(x_ts);
+
+                end
+
+           end
+
         case 'mad'
 
             TEMP = cellfun(@(x) mad(x,0,2), dat.trial, 'UniformOutput',false);
@@ -188,11 +211,11 @@ for ifeat = cfg_feats.time
     end
 
     % reduce from parcels to PC
-    F.single_feats.(this_feat) = TEMP;
+    F.single_feats.([meta_, this_feat]) = TEMP;
     % add to F structure
     F = local_add_feature(F, TEMP, ntrials, nchans);
     % log runtime
-    F.runtime.(this_feat) = round(toc, 2);
+    F.runtime.([meta_, this_feat]) = round(toc, 2);
 
 end
 

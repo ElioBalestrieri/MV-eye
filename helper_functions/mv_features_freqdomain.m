@@ -250,7 +250,7 @@ end
 
 function Fband = local_inst_freq_feats(dat_bp, Fband, ntrials, nchans)
 
-% define smotthing kernel
+% define smoothing kernel
 l_krnl = round(dat_bp.fsample/4);
 krnl_3d = ones(l_krnl, 1, 1)./l_krnl;
 

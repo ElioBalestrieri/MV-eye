@@ -5,7 +5,7 @@ function cfg_feats = mv_features_cfg_theoretical_freqbands()
 cfg_feats.time = {};
 
 % frequency domain
-cfg_feats.freq = {'freqRanges', 'alpha_low_gamma_ratio', 'alpha_high_gamma_ratio'};
+cfg_feats.freq = {'freqRanges'};
 
 % add mandatory freq band defintion for freqRanges
 % Hz low <= band < Hz high

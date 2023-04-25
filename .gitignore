@@ -139,6 +139,7 @@ dmypy.json
 
 # HPC outputs
 *.out
+*StdOut
 
 # plotting templates and atlases (at least for the time being)
 *.nii
