@@ -176,13 +176,45 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
 
         SUBJid = [f'ID_{isubj+1:02d}']            
         
-        # load file & extraction
-        fname = infold + f'{isubj+1:02d}_' + ftype + '.mat'
-        mat_content = loadmat_struct(fname)
-        F = mat_content['variableName']
-        
-        # condition labels        
-        Y_labels = F['Y']
+        # allow concatenation of multiple file types, aka experimental conditions
+        # in order to then run decoding across conds
+        if isinstance(ftype, str):            
+            ftype = [ftype]
+                    
+        acc_label = 0; tmp_dict = {}
+        for this_ftype in ftype:
+            
+            # load file & extraction
+            fname = infold + f'{isubj+1:02d}_' + this_ftype + '.mat'
+            mat_content = loadmat_struct(fname)
+            F = mat_content['variableName']
+            
+            if not best_feats:
+                loop_feats = F['single_feats'].keys()
+            else:
+                loop_feats = best_feats
+
+            # condition labels        
+            Y_labels = F['Y']+acc_label
+            
+            for ifeat in loop_feats:
+                     
+                if acc_label == 0:                    
+                    tmp_dict.update({ifeat : np.copy(F['single_feats'][ifeat])})
+
+                else:
+                    tmp_dict[ifeat] = np.concatenate((tmp_dict[ifeat], np.copy(F['single_feats'][ifeat])), axis=0)
+
+            if acc_label == 0:
+                swap_Y = np.copy(Y_labels)
+            else:
+                swap_Y = np.concatenate((swap_Y, Y_labels), axis=0)
+
+            acc_label+=len(np.unique(Y_labels))
+            
+        # assign the loop output to the original structures
+        F['single_feats'] = tmp_dict
+        Y_labels = swap_Y
 
         # get indexes for train and test
         idx_full = np.arange(len(Y_labels))
