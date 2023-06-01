@@ -13,10 +13,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None  # to deal with chained assignement wantings coming from columns concatenation
 import sys
 import os
-import dask
-from datetime import datetime
-import pickle
-
+import re
 
 #%% custom functions
 
@@ -55,8 +52,6 @@ pipe = Pipeline([
                  ('SVM', SVC(C=10))
                 ])
 
-from sklearn.feature_selection import SequentialFeatureSelector
-
 rbf_svm = SVC(C=10, verbose=True)
 
 
@@ -71,20 +66,29 @@ mdltypes = ['FullFFT', 'TimeFeats', 'FTM', 'FreqBands']
 acc_type = 0
 full_count_exc = 0
 
+# compile regex for further PC selection in keys
+r = re.compile("PC_*")
+
 for ThisExpCond in ExpConds:
         
     for imdl in mdltypes:
     
         data_type = ThisExpCond + '_' + imdl
-        fullX_train, fullX_test, Y_train, Y_test = cat_subjs_train_test(infold, strtsubj=0, endsubj=29, 
+        fullX_train, fullX_test, Y_train, Y_test, subjID_trials_labels = cat_subjs_train_test(infold, strtsubj=0, endsubj=29, 
                                                                 ftype=data_type, tanh_flag=True, 
-                                                                compress_flag=True)
+                                                                compress_flag=True,
+                                                                pca_kept_var=.9)
+        
+        PC_list_names = newlist = list(filter(r.match, fullX_train.keys()))
         
         # preallocate matrix (if first iteration on the loop)
-        mat_accs = np.empty((1, len(fullX_train)))
+        mat_accs = np.empty((1, len(PC_list_names)))
             
+        all_PC_names = 0 
+        
+        
         acc_feat = 0
-        for key in fullX_train:
+        for key in PC_list_names:
             
             X_train = fullX_train[key]
             X_test = fullX_test[key]
@@ -101,10 +105,10 @@ for ThisExpCond in ExpConds:
             
             print(key)
                       
-        DF = pd.DataFrame(data=mat_accs, columns=fullX_train.keys(), index=[imdl])
+        DF = pd.DataFrame(data=mat_accs, columns=PC_list_names, index=[imdl])
                   
         # save
-        fname_out = outfold + 'AcrossSubjs_' + ThisExpCond +  '_' + imdl + '.csv'
+        fname_out = outfold + 'AcrossSubjs_PC_' + ThisExpCond +  '_' + imdl + '.csv'
         DF.to_csv(fname_out)
         
         

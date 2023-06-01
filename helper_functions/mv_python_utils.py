@@ -360,7 +360,7 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
         full_X_test.update({'list_PC_identifiers' : list_PC_identifiers})
         
 
-    return full_X_train, full_X_test, full_Y_train, full_Y_test
+    return full_X_train, full_X_test, full_Y_train, full_Y_test, subjID_trials_labels 
 
 
 

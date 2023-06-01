@@ -20,7 +20,7 @@ plt.close('all')
 #%% single subjects
 
 ExpConds = ['ECEO', 'VS'] 
-MdlTypes = ['FullFFT', 'FreqBands', 'TimeFeats'] #, 'FB_cherrypicked', 'cherrypicked']
+MdlTypes = ['FullFFT', 'FreqBands', 'TimeFeats', 'FTM'] #, 'FB_cherrypicked', 'cherrypicked']
 
 up_to_subj = 29
 
@@ -58,8 +58,7 @@ for isubj in range(up_to_subj):
             tmp = DF_BW.set_index('Unnamed: 0').stack().to_frame().\
                         reset_index().rename(columns={'Unnamed: 0': 'freq_band', 
                                                       'level_1': 'feature', 
-                                                      0: 'decoding_accuracy'})
-     
+                                                      0: 'decoding_accuracy'})   
             tmp = tmp.drop('freq_band', axis=1)
             
             # add columns
@@ -68,20 +67,55 @@ for isubj in range(up_to_subj):
             tmp['MdlType'] = [iMdl] * tmp.shape[0]
 
             allsubjs_between_DFs.append(tmp)
-                
-            
-            
+             
 DF_fullsample_WN = pd.concat(allsubjs_within_DFs, ignore_index=True) 
 DF_fullsample_BW = pd.concat(allsubjs_between_DFs, ignore_index=True) 
+
+
+#%% across subjects comparisons
+
+mat_acc_across = np.empty((len(ExpConds), len(MdlTypes)))
+
+ls_dec_acc = []; ls_exp_cond = []; ls_mdltype = []
+
+acc_expcond = 0
+for iExp in ExpConds:
     
+    acc_mdl = 0
+    for iMdl in MdlTypes:
+                
+        fname_across = infold + 'AcrossSubjs_PC_' + iExp + '_' + iMdl + '.csv'
+        tmp_DF = pd.read_csv(fname_across)
+
+        mat_acc_across[acc_expcond, acc_mdl] = tmp_DF['PC_aggregate'].loc[0]
+        
+        ls_dec_acc.append(tmp_DF['PC_aggregate'].loc[0])
+        ls_exp_cond.append(iExp)
+        ls_mdltype.append(iMdl)
     
+        acc_mdl += 1
+        
+    acc_expcond += 1
+    
+tmp_dict = {'MdlType' : ls_mdltype,
+            'ExpCond' : ls_exp_cond,
+            'decoding accuracy' : ls_dec_acc}
+
+
+DF_across = pd.DataFrame.from_dict(tmp_dict)    
+# # DF_across = pd.DataFrame(data=mat_acc_across, index=ExpConds, columns=MdlTypes)  
+
+
 
 #%% plotting
 
 # 2. for each freq band plot the ordered full set of features.
 # moreover, select the best 3 features in each freq band
 
-temp_MdlTypes = ['TimeFeats', 'FreqBands']
+temp_MdlTypes = ['TimeFeats', 'FreqBands']# plt.figure()
+# ax = sns.barplot(data=DF_across.round(3), x='MdlType',
+#                  hue='Index', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
+
 DS_WN_BW_list = [DF_fullsample_WN.round(3), DF_fullsample_BW.round(3)]
 list_compname = ['within subj', 'bewteen subj']
 
@@ -160,12 +194,6 @@ print('\nTTest within FreqBands vs TimeFeats in Visual Stimulation')
 print(ttest_FreqTime_VS_WN.round(3).to_string())
 
 
-
-
-
-
-
-
 ttest_FreqTime_VS_WN = pg.ttest(DF_fullsample_WN['decoding_accuracy'].loc[
     (DF_fullsample_WN['MdlType']=='FreqBands') & (DF_fullsample_WN['ExpCond']=='ECEO') & (DF_fullsample_WN['feature']=='full_set')],
                             DF_fullsample_WN['decoding_accuracy'].loc[
@@ -242,26 +270,34 @@ print('\nTTest between FullFFT vs TimeFeats in ECEO')
 print(ttest_FFtTimeFeats_ECEO_BW.round(3).to_string())
 
 
-# subplot within
+#%% subplot within
 plt.figure()
-plt.subplot(211)
+plt.subplot(221)
 ax = sns.barplot(data=DF_full_set_WN.round(3), y='decoding_accuracy', x='MdlType',
                  hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
 
 plt.ylim((.5, 1))
 plt.title('Features type\n within subject accuracy')
-plt.tight_layout()
 plt.legend([],[], frameon=False)
 
-# subplot within
-plt.subplot(212)
+# subplot between
+plt.subplot(222)
 ax = sns.barplot(data=DF_full_set_BW, y='decoding_accuracy', x='MdlType',
             hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
 plt.ylim((.5, 1))
+plt.legend([],[], frameon=False)
 
 plt.title('Features type\n between subjects (LOO) accuracy')
-plt.tight_layout()
 
+# subplot across
+plt.subplot(223)
+ax = sns.barplot(data=DF_across.round(3), x='MdlType', y='decoding accuracy',
+                  hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar=None)
+plt.ylim((.5, 1))
+plt.title('Features type\n across subjects accuracy')
+sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+
+plt.tight_layout()
 plt.show()
 
 #%% explore top 10 single features in every subcondition

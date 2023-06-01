@@ -58,7 +58,7 @@ for imdl in mdltypes:
     for ThisExpCond in ExpConds:                
         list_ExpConds.append(ThisExpCond + '_' + imdl)
 
-    fullX_train, fullX_test, Y_train, Y_test = cat_subjs_train_test(infold, strtsubj=0, endsubj=29, 
+    fullX_train, fullX_test, Y_train, Y_test, subjID_trials_labels = cat_subjs_train_test(infold, strtsubj=0, endsubj=29, 
                                                                     ftype=list_ExpConds, tanh_flag=True, 
                                                                     compress_flag=True, pca_kept_var=.9)     
     L_Xtrain.append(fullX_train['PC_aggregate'])
