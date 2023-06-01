@@ -40,7 +40,7 @@ parfor isubj = 1:nsubjs
     % formatted codename
     subjcode = sprintf('%0.2d', isubj);
 
-    for icond = 2%:2
+    for icond = 1:2
         
         this_cond = exp_cond{icond}; this_ftype = fname_types{icond};
         fname_in = ['S' subjcode this_ftype];

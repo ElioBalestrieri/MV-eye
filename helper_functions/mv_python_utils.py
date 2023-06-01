@@ -12,6 +12,7 @@ Some useful, shared, python code
 
 import scipy.io as sio
 import numpy as np
+# import copy
 
 # imputer
 from sklearn.impute import SimpleImputer
@@ -22,6 +23,8 @@ from sklearn.preprocessing import RobustScaler
 # 
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
+
+
 
 
 #%% load *mat structures
@@ -161,11 +164,18 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats',
 
 #%% concatenate subjects but while concurrently splitting training and test
 
-def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats', 
-                         tanh_flag=False, compress_flag=False, test_size=.15, pca_kept_var=None):
+def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=0, 
+                         endsubj=22, ftype='feats', tanh_flag=False, 
+                         compress_flag=False, test_size=.15, pca_kept_var=None):
 
     # define subjects range
-    range_subjs = np.arange(strtsubj, endsubj)
+    if subjlist is None:
+        range_subjs = np.arange(strtsubj, endsubj)
+    else:
+        range_subjs = subjlist
+        strtsubj = subjlist[0]
+        endsubj = subjlist[-1]
+
         
     # define common transformations
     remove_nan = SimpleImputer(missing_values=np.nan, strategy='mean')
@@ -174,7 +184,10 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
     accsubj = 1; subjID_trials_labels = []
     for isubj in range_subjs:
 
-        SUBJid = [f'ID_{isubj+1:02d}']            
+        if isinstance(isubj, np.integer):
+            SUBJid = [f'ID_{isubj+1:02d}']            
+        else:
+            SUBJid = [isubj]
         
         # allow concatenation of multiple file types, aka experimental conditions
         # in order to then run decoding across conds
@@ -185,7 +198,13 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
         for this_ftype in ftype:
             
             # load file & extraction
-            fname = infold + f'{isubj+1:02d}_' + this_ftype + '.mat'
+            if isinstance(isubj, np.integer):
+                fname = infold + f'{isubj+1:02d}_' + this_ftype + '.mat'                
+            else:
+                fname = infold + isubj + '_' + this_ftype + '.mat'
+
+
+                
             mat_content = loadmat_struct(fname)
             F = mat_content['variableName']
             
@@ -218,8 +237,14 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
 
         # get indexes for train and test
         idx_full = np.arange(len(Y_labels))
-        idx_train, idx_test = train_test_split(idx_full, test_size=test_size, random_state=isubj)
+        if isinstance(isubj, np.integer):        
+            idx_train, idx_test = train_test_split(idx_full, test_size=test_size, 
+                                                   random_state=isubj)
+        else:
+            idx_train, idx_test = train_test_split(idx_full, test_size=test_size, 
+                                                   random_state=accsubj)
 
+            
         # labels split in train and test
         Y_train = Y_labels[idx_train]; Y_test = Y_labels[idx_test]
 
@@ -310,9 +335,14 @@ def cat_subjs_train_test(infold, best_feats=None, strtsubj=0, endsubj=22, ftype=
 
                 
         accsubj +=1
+
+    if isinstance(isubj, np.integer):        
+        print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
+              str(strtsubj+1) + ' to ' + str(endsubj+1))
+    else:
+        print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
+              strtsubj + ' to ' + endsubj)
         
-    print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
-          str(strtsubj+1) + ' to ' + str(endsubj+1))
 
     if pca_kept_var:
                 

@@ -136,6 +136,10 @@ dmypy.json
 *.mat
 *.csv
 *.pickle
+*.set
+*.study
+# docs
+*.docx
 
 # HPC outputs
 *.out
