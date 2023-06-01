@@ -19,4 +19,4 @@ module load scikit-learn/1.1.2
 module load dask
 
 # START THE APPLICATION
-python HPC_sequential_feat_selection.py
+python HPC_sequential_feat_selection_condscollapsed.py
