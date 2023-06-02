@@ -3,7 +3,7 @@
 #SBATCH --nodes=1                   # the number of nodes you want to reserve
 #SBATCH --ntasks-per-node=1         # the number of tasks/processes per node
 #SBATCH --cpus-per-task=30          # the number cpus per task
-#SBATCH --partition=e0bm          # on which partition to submit the job
+#SBATCH --partition=long          # on which partition to submit the job
 #SBATCH --time=7-00:00:00             # the max wallclock time (time limit your job will run)
  
  
@@ -19,4 +19,4 @@ module load scikit-learn/1.1.2
 module load dask
 
 # START THE APPLICATION
-python HPC_withinsubjs_mdl_compare_LEMON.py
+python HPC_betweensubjs_mdl_compare_LEMON.py
