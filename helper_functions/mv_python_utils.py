@@ -66,11 +66,16 @@ def _todict(matobj):
 
 #%% concatenate the features across subjects
     
-def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats', 
+def cat_subjs(infold, best_feats=None, subjlist=None, strtsubj=0, endsubj=22, ftype='feats', 
               tanh_flag=False, compress_flag=False):
 
     # define subjects range
-    range_subjs = np.arange(strtsubj, endsubj)
+    if subjlist is None:
+        range_subjs = np.arange(strtsubj, endsubj)
+    else:
+        range_subjs = subjlist
+        strtsubj = subjlist[0]
+        endsubj = subjlist[-1]
         
     # define common transformations
     remove_nan = SimpleImputer(missing_values=np.nan, strategy='mean')
@@ -79,10 +84,18 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats',
     accsubj = 0; subjID_trials_labels = []
     for isubj in range_subjs:
 
-        SUBJid = [f'ID_{isubj+1:02d}']            
-        
+        if isinstance(isubj, np.integer):
+            SUBJid = [f'ID_{isubj+1:02d}']            
+        else:
+            SUBJid = [isubj]
+                
         # load file & extraction
-        fname = infold + f'{isubj+1:02d}_' + ftype + '.mat'
+        if isinstance(isubj, np.integer):
+            fname = infold + f'{isubj+1:02d}_' + ftype + '.mat'                
+        else:
+            fname = infold + isubj + '_' + ftype + '.mat'
+
+
         mat_content = loadmat_struct(fname)
         F = mat_content['variableName']
         
@@ -156,16 +169,20 @@ def cat_subjs(infold, best_feats=None, strtsubj=0, endsubj=22, ftype='feats',
                 
         accsubj +=1
         
-    print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
-          str(strtsubj+1) + ' to ' + str(endsubj+1))
+    if isinstance(isubj, np.integer):        
+        print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
+              str(strtsubj+1) + ' to ' + str(endsubj+1))
+    else:
+        print('Concatenated ' + str(accsubj) + ' subjects, from ' + 
+              strtsubj + ' to ' + endsubj)
                 
     return full_X, full_Y, subjID_trials_labels, full_trl_order
     
 
 #%% concatenate subjects but while concurrently splitting training and test
 
-def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=0, 
-                         endsubj=22, ftype='feats', tanh_flag=False, 
+def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None, 
+                         endsubj=None, ftype='feats', tanh_flag=False, 
                          compress_flag=False, test_size=.15, pca_kept_var=None):
 
     # define subjects range
