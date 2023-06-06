@@ -50,7 +50,7 @@ from sklearn.metrics import balanced_accuracy_score
 
 # concatenate files between participant, after within-participant normalization
 
-mdltypes = ['FTM', 'FreqBands', 'TimeFeats', 'FullFFT']
+mdltypes = ['FreqBands', 'TimeFeats'] # , 'FullFFT', 'FTM']
 acc_type = 0
 full_count_exc = 0
         
@@ -65,9 +65,10 @@ for imdl in mdltypes:
     
     allsubjs_X, allsubjs_Y, allsubjs_ID, full_trl_order = cat_subjs(infold, subjlist=filt_fnames,
                                                     ftype=imdl, tanh_flag=True, 
-                                                    compress_flag=True)
+                                                    compress_flag=True,
+                                                    all_feats_flag=False) # newly adde dto just concatenate full_set
     
-    fname_X = infold + 'Allsubjs_X_'  + imdl + '.pickle'
+    fname_X = infold + 'Allsubjs_X_'  + imdl + '_fullset.pickle'
     fname_Y = infold + 'Allsubjs_Y_'  + imdl + '.pickle'
     fname_ID = infold + 'Allsubjs_ID_'  + imdl + '.pickle'
 
@@ -96,7 +97,7 @@ def decode_leave_one_subj_out(isubj, infold, mdltypes, outfold):
     
     for imdl in mdltypes:
                 
-        fname_X = infold + 'Allsubjs_X_'  + imdl + '.pickle'
+        fname_X = infold + 'Allsubjs_X_'  + imdl + '_fullset.pickle'
         fname_Y = infold + 'Allsubjs_Y_'  + imdl + '.pickle'
         fname_ID = infold + 'Allsubjs_ID_'  + imdl + '.pickle'
     
@@ -138,7 +139,7 @@ def decode_leave_one_subj_out(isubj, infold, mdltypes, outfold):
         DF = pd.DataFrame(data=mat_accs, columns=allsubjs_X.keys(), index=[imdl])
           
         # save
-        fname_out = outfold + SUBJid + '_leftout_' + imdl + '_BS.csv'
+        fname_out = outfold + SUBJid + '_leftout_' + imdl + '_BS_fullset.csv'
         DF.to_csv(fname_out)
         
     return SUBJid

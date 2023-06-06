@@ -67,7 +67,7 @@ def _todict(matobj):
 #%% concatenate the features across subjects
     
 def cat_subjs(infold, best_feats=None, subjlist=None, strtsubj=0, endsubj=22, ftype='feats', 
-              tanh_flag=False, compress_flag=False):
+              tanh_flag=False, compress_flag=False, all_feats_flag=True):
 
     # define subjects range
     if subjlist is None:
@@ -144,11 +144,12 @@ def cat_subjs(infold, best_feats=None, subjlist=None, strtsubj=0, endsubj=22, ft
                 
                 aggr_feat = np.concatenate((aggr_feat, this_val), axis=1)
 
-            subj_dict.update({ifeat : this_val})
-            
+            if all_feats_flag:
+                subj_dict.update({ifeat : this_val})
+
             acc_feat += 1
             
-        subj_dict.update({'aggregate' : aggr_feat})
+        subj_dict.update({'full_set' : aggr_feat})
         
         if isubj == strtsubj:
             
@@ -320,8 +321,8 @@ def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None,
 
             acc_feat += 1
             
-        subj_dict_train.update({'aggregate' : aggregate_train})
-        subj_dict_test.update({'aggregate' : aggregate_test})
+        subj_dict_train.update({'full_set' : aggregate_train})
+        subj_dict_test.update({'full_set' : aggregate_test})
 
         
         if isubj == strtsubj:
@@ -364,7 +365,7 @@ def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None,
     if pca_kept_var:
                 
         acc_feat = 0; list_PC_identifiers = []
-        for key in loop_feats: # call the loop feats, so that "aggregate" is not included. we create a new aggregate by concatenating the PCs
+        for key in loop_feats: # call the loop feats, so that "full_set" is not included. we create a new aggregate by concatenating the PCs
              
             my_PCA = PCA(n_components=.9, svd_solver='full')
         
@@ -400,8 +401,8 @@ def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None,
 
             acc_feat += 1
         
-        full_X_train.update({'PC_aggregate' : aggregate_train})
-        full_X_test.update({'PC_aggregate' : aggregate_test})
+        full_X_train.update({'PC_full_set' : aggregate_train})
+        full_X_test.update({'PC_full_set' : aggregate_test})
 
         full_X_train.update({'list_PC_identifiers' : list_PC_identifiers})
         full_X_test.update({'list_PC_identifiers' : list_PC_identifiers})
