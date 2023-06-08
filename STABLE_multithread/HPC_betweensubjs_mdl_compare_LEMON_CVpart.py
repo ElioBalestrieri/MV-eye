@@ -97,7 +97,6 @@ for imdl in mdltypes:
 def decode_onefold_onemodel(jobcode, infold, outfold):
 
     pipe = Pipeline([
-                     ('std_PCA', PCA(n_components=.9, svd_solver='full')),
                      ('SVM', SVC(C=10))
                     ])
 
