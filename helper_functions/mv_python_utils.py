@@ -24,6 +24,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 
+import pickle
 
 
 
@@ -413,14 +414,154 @@ def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None,
 
 
 
+#%% concatenate subjects but while concurrently splitting training and test
+
+def first_dat_preproc(X, remove_nan, trim_outliers, tanh_flag=False, 
+                      compress_flag=False):
+    
+    X = remove_nan.fit_transform(X)
+    
+    # fit robust scaler on xtrain and apply it on x test
+    X = trim_outliers.fit_transform(X)
+            
+    if tanh_flag:
+        X = np.tanh(X)
+    
+    # compress?
+    if compress_flag:        
+        X = np.float32(X)
+
+    return X
 
 
 
+def cat_subjs_from_list(subjs_list, infold, ftype, tanh_flag, compress_flag):
+
+    # preallocate dictionaries
+    subjs_dict = {}
+
+    # define common transformations
+    remove_nan = SimpleImputer(missing_values=np.nan, strategy='mean')
+    trim_outliers = RobustScaler()
+
+    accsubj = 1; subjID_trials_labels = []      
+    for isubj in subjs_list:
+
+        if isinstance(isubj, np.integer):
+            SUBJid = [f'ID_{isubj+1:02d}']            
+        else:
+            SUBJid = [isubj]
+    
+                            
+        # load file & extraction
+        if isinstance(isubj, np.integer):
+            fname = infold + f'{isubj+1:02d}_' + ftype + '.mat'                
+        else:
+            fname = infold + isubj + '_' + ftype + '.mat'
+
+            
+        mat_content = loadmat_struct(fname)
+        F = mat_content['variableName']
+        
+        loop_feats = list(F['single_feats'].keys())
+
+        # condition labels        
+        Y = F['Y']
+        
+        # generate subject's trials labels
+        # and append to the common list
+        this_subj_IDlabels = SUBJid*len(Y)
+        subjID_trials_labels = subjID_trials_labels + this_subj_IDlabels
+
+        for ifeat in loop_feats:
+            
+            X = F['single_feats'][ifeat]     
+            
+            X = first_dat_preproc(X, remove_nan, trim_outliers, 
+                                        tanh_flag=tanh_flag, 
+                                        compress_flag=compress_flag)
+                
+            if accsubj==1:                
+                subjs_dict.update({ifeat : X})
+                full_Y = Y
+            else:
+                subjs_dict[ifeat] = np.concatenate((subjs_dict[ifeat], X), axis=0)
+                full_Y = np.concatenate((full_Y, Y), axis=0)
+                
+        accsubj +=1
+
+    return subjs_dict, full_Y, subjID_trials_labels
 
 
 
+def split_subjs_train_test(infold, partition_dict, nfolds=5, ftype='feats', tanh_flag=False, 
+                         compress_flag=False, pca_kept_var=None):
 
+    out_par_conds = []
+    for ifold in range(nfolds):
+        
+        # get subjlist for training 
+        subjs_trainset = partition_dict['train_fold_' + str(ifold)]
 
+        # get subjlist for testing 
+        subjs_testset = partition_dict['test_fold_' + str(ifold)]
 
+        # apply basic preprcoessing for training... 
+        X_train, Y_train, subjIDtrain = cat_subjs_from_list(subjs_trainset, infold, 
+                                                            ftype, tanh_flag, compress_flag)
+        # ... & testing separately
+        X_test, Y_test, subjIDtest = cat_subjs_from_list(subjs_testset, infold, 
+                                                         ftype, tanh_flag, compress_flag)
+        loop_feats = list(X_train.keys())     
+        
+        acc_feat = 0; list_PC_identifiers = []            
+        for key in loop_feats: # call the loop feats, so that "full_set" is not included. we create a new aggregate by concatenating the PCs
+
+            X_train_single_feat = X_train[key]
+            X_test_single_feat = X_test[key]
+
+            if pca_kept_var:
+
+                # apply PCA for each single feature, and concatenate. To avoid confounders, 
+                # while retaining coherence between components the PCA is fitted on the 
+                # train, and the same model is then applied to both train and test
+         
+                my_PCA = PCA(n_components=pca_kept_var, svd_solver='full')
+                my_PCA = my_PCA.fit(X_train_single_feat)
+        
+                X_train_single_feat = my_PCA.transform(X_train_single_feat)
+                X_test_single_feat = my_PCA.transform(X_test_single_feat)
+
+            if acc_feat == 0 :                    
+                Xtrain_full = X_train_single_feat
+                Xtest_full = X_test_single_feat
+            else:
+                Xtrain_full = np.concatenate((Xtrain_full, X_train_single_feat), axis=1)
+                Xtest_full = np.concatenate((Xtest_full, X_test_single_feat), axis=1)
+            
+            acc_feat += 1
+        
+        # parallel condition: one CPU will load this Fold/ftype combination and
+        # work on that
+        this_par_cond = 'Fold_' + str(ifold) + '_' + ftype
+        
+        # save output 
+        current_out = {this_par_cond + '_X_train': Xtrain_full,
+                       this_par_cond + '_X_test' : Xtest_full,
+                       this_par_cond + '_Y_train': Y_train,
+                       this_par_cond + '_Y_test': Y_test,
+                       this_par_cond + '_SubjIDtrain': subjIDtrain,
+                       this_par_cond + '_SubjIDtest': subjIDtest}
+        
+        for key, val in current_out.items():
+            
+            fname = infold + key + '.pickle'
+            with open(fname, 'wb') as handle:
+                pickle.dump(val, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        # append parallel condition. The final list is function output
+        out_par_conds.append(this_par_cond)
+            
+    return out_par_conds
 
 
