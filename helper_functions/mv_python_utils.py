@@ -483,10 +483,15 @@ def cat_subjs_from_list(subjs_list, infold, ftype, tanh_flag, compress_flag):
                 
             if accsubj==1:                
                 subjs_dict.update({ifeat : X})
-                full_Y = Y
             else:
                 subjs_dict[ifeat] = np.concatenate((subjs_dict[ifeat], X), axis=0)
-                full_Y = np.concatenate((full_Y, Y), axis=0)
+
+        # now concatenate y labels                
+        if accsubj==1:
+            full_Y = Y
+        else:
+            full_Y = np.concatenate((full_Y, Y), axis=0)
+                
                 
         accsubj +=1
 
