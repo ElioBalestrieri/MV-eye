@@ -39,8 +39,8 @@ if not(os.path.isdir(outfold)):
 #%% Classification object definition
 
 # functions for PCA/SVM
-from sklearn.decomposition import PCA
-from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
 
 # pipeline definer
 from sklearn.pipeline import Pipeline
@@ -96,8 +96,8 @@ for imdl in mdltypes:
 @dask.delayed
 def decode_onefold_onemodel(jobcode, infold, outfold):
 
-    pipe = Pipeline([
-                     ('SVM', SVC(C=10))
+    pipe = Pipeline([('scaler', StandardScaler())
+                     ('LinearSVM', LinearSVC(dual=False))
                     ])
 
     fname_X_train = infold + jobcode + '_X_train.pickle'
