@@ -96,7 +96,7 @@ for imdl in mdltypes:
 @dask.delayed
 def decode_onefold_onemodel(jobcode, infold, outfold):
 
-    pipe = Pipeline([('scaler', StandardScaler())
+    pipe = Pipeline([('scaler', StandardScaler()),
                      ('LinearSVM', LinearSVC(dual=False))
                     ])
 
