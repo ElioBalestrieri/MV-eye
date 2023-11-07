@@ -41,22 +41,26 @@ if not(os.path.isdir(outfold)):
 # functions for PCA/SVM
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+
 
 # pipeline definer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import balanced_accuracy_score
 
 # define pipeline object
-pipe = Pipeline([
-                 ('std_PCA', PCA(n_components=.9, svd_solver='full')),
-                 ('SVM', SVC(C=10))
+# pipe = Pipeline([
+#                  ('std_PCA', PCA(n_components=.9, svd_solver='full')),
+#                  ('SVM', SVC(C=10))
+#                 ])
+
+pipe = Pipeline([('scaler', StandardScaler()),
+                 ('LinearSVM', LinearSVC(dual=False))
                 ])
 
-rbf_svm = SVC(C=10, verbose=True)
-
-
 #%% models and conditions
-mdltypes = ['TimeFeats', 'FTM', 'FreqBands', 'FullFFT']
+mdltypes = ['FullFFT', 'TimeFeats', 'FTM', 'FreqBands']
 
 #%% non parallel part
 
@@ -65,13 +69,12 @@ acc_type = 0
 full_count_exc = 0
 
 # compile regex for further PC selection in keys
-r = re.compile("PC_*")
-
+r = re.compile("PC_full_set") 
         
 for imdl in mdltypes:
     
     data_type = imdl
-    filt_fnames = fnmatch.filter(os.listdir(infold), '*' + imdl +'*')
+    filt_fnames = fnmatch.filter(os.listdir(infold), 'sub-*' + imdl + '*.mat')
     acc = 0
     for iname in filt_fnames: 
         iname = iname[0:10]
@@ -84,7 +87,7 @@ for imdl in mdltypes:
                                                             pca_kept_var=.9)
     
     PC_list_names = newlist = list(filter(r.match, fullX_train.keys()))
-    
+        
     # preallocate matrix (if first iteration on the loop)
     mat_accs = np.empty((1, len(PC_list_names)))
         
@@ -112,7 +115,7 @@ for imdl in mdltypes:
     DF = pd.DataFrame(data=mat_accs, columns=PC_list_names, index=[imdl])
               
     # save
-    fname_out = outfold + 'AcrossSubjs_PC_' + imdl + '.csv'
+    fname_out = outfold + 'AcrossSubjs_PC_LinearSVM_' + imdl + '.csv'
     DF.to_csv(fname_out)
         
         

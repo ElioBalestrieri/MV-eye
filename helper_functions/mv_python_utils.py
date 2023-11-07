@@ -12,7 +12,7 @@ Some useful, shared, python code
 
 import scipy.io as sio
 import numpy as np
-# import copy
+import copy
 
 # imputer
 from sklearn.impute import SimpleImputer
@@ -239,7 +239,6 @@ def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None,
                      
                 if acc_label == 0:                    
                     tmp_dict.update({ifeat : np.copy(F['single_feats'][ifeat])})
-
                 else:
                     tmp_dict[ifeat] = np.concatenate((tmp_dict[ifeat], np.copy(F['single_feats'][ifeat])), axis=0)
 
@@ -251,8 +250,8 @@ def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None,
             acc_label+=len(np.unique(Y_labels))
             
         # assign the loop output to the original structures
-        F['single_feats'] = tmp_dict
-        Y_labels = swap_Y
+        F['single_feats'] = copy.deepcopy(tmp_dict)
+        Y_labels = copy.deepcopy(swap_Y)
 
         # get indexes for train and test
         idx_full = np.arange(len(Y_labels))
@@ -329,10 +328,11 @@ def cat_subjs_train_test(infold, best_feats=None, subjlist=None, strtsubj=None,
         if isubj == strtsubj:
             
             #initialize datasets that will be concatenated
-            full_Y_train = Y_train; full_Y_test = Y_test   
+            full_Y_train = Y_train
+            full_Y_test = Y_test   
             full_X_train = subj_dict_train
             full_X_test = subj_dict_test
-            
+                        
         else:
             
             full_Y_train = np.concatenate((full_Y_train, Y_train), axis=0)
@@ -570,3 +570,113 @@ def split_subjs_train_test(infold, partition_dict, nfolds=5, ftype='feats', tanh
     return out_par_conds
 
 
+def cat_subjs_train_test_ParcelScale(infold, best_feats=None, subjlist=None, strtsubj=None, 
+                         endsubj=None, ftype='feats', tanh_flag=False, 
+                         test_size=.15):
+
+    # define subjects range
+    if subjlist is None:
+        range_subjs = np.arange(strtsubj, endsubj)
+    else:
+        range_subjs = subjlist
+        strtsubj = subjlist[0]
+        endsubj = subjlist[-1]
+
+    # define common transformations
+    trim_outliers = RobustScaler()
+
+    accsubj = 1; 
+    X_train, X_test = {}, {}
+    for isubj in range_subjs:
+
+        
+        # allow concatenation of multiple file types, aka experimental conditions
+        # in order to then run decoding across conds
+        if isinstance(ftype, str):            
+            ftype = [ftype]
+                    
+        acc_label = 0; 
+        for this_ftype in ftype:
+            
+            # load file & extraction
+            if isinstance(isubj, np.integer):
+                fname = infold + f'{isubj+1:02d}_' + this_ftype + '.mat'                
+            else:
+                fname = infold + isubj + '_' + this_ftype + '.mat'
+                
+            mat_content = loadmat_struct(fname)
+            F = mat_content['variableName']
+            
+            if not best_feats:
+                loop_feats = F['single_feats'].keys()
+            else:
+                loop_feats = best_feats
+
+            # condition labels        
+            Y_labels = F['Y']+acc_label
+            
+            # get indexes for train and test
+            idx_full = np.arange(len(Y_labels))
+        
+            if isinstance(isubj, np.integer):        
+                idx_train, idx_test = train_test_split(idx_full, test_size=test_size, 
+                                                       random_state=isubj)
+            else:
+                idx_train, idx_test = train_test_split(idx_full, test_size=test_size, 
+                                                       random_state=accsubj)
+
+            # generate subject's trials labels
+            # and append to the common list
+            IDlabels_train = [isubj]*len(idx_train)
+            IDlabels_test = [isubj]*len(idx_test)
+
+                
+            # create labels & subjID vectors for train and test
+            if (isubj == strtsubj) & (acc_label==0):
+                Y_train = Y_labels[idx_train]; Y_test = Y_labels[idx_test]      
+                IDs_allsubjs_train = IDlabels_train
+                IDs_allsubjs_test = IDlabels_test
+            
+            else:            
+                Y_train = np.concatenate((Y_train,  Y_labels[idx_train]), axis=0)
+                Y_test = np.concatenate((Y_test, Y_labels[idx_test]), axis=0)
+                IDs_allsubjs_train = IDs_allsubjs_train + IDlabels_train
+                IDs_allsubjs_test = IDs_allsubjs_test + IDlabels_test
+            
+            for ifeat in loop_feats:
+
+                if ifeat == 'fooof_aperiodic':
+                    
+                    tmp_dat = [F['single_feats'][ifeat][:, 0::2], F['single_feats'][ifeat][:, 0::2]]
+                    featname = ['fooof_slope', 'fooof_offset']
+
+                else:
+                
+                    tmp_dat = [F['single_feats'][ifeat]] # all of this superconvoluted nested loop that follows is 
+                                                         # to account that fooof contains 2 fu**ng feats instead of one
+                    featname = [ifeat]
+                
+                acc_this_feat = 0
+                for this_feat in featname:
+
+                    dat = tmp_dat[acc_this_feat]
+                    scaled_dat = trim_outliers.fit_transform(dat.T).T # apply transformation on parcels, and transpose it back
+                
+                    if tanh_flag:
+                        X = np.tanh(scaled_dat)
+
+                    if (isubj == strtsubj) & (acc_label==0):                    
+                        X_train.update({this_feat : X[idx_train, :]})
+                        X_test.update({this_feat : X[idx_test, :]})
+
+                    else:
+                        X_train[this_feat] = np.concatenate((X_train[this_feat], X[idx_train, :]), axis=0)
+                        X_test[this_feat] = np.concatenate((X_test[this_feat], X[idx_test, :]), axis=0)
+
+                        
+                    acc_this_feat += 1
+                    
+            acc_label+=len(np.unique(Y_labels))
+            
+    # finally, out
+    return X_train, X_test, Y_train, Y_test, IDs_allsubjs_train, IDs_allsubjs_test

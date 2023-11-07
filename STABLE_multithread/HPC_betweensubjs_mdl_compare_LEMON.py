@@ -56,7 +56,7 @@ full_count_exc = 0
         
 for imdl in mdltypes:
     
-    filt_fnames = fnmatch.filter(os.listdir(infold), '*' + imdl +'*')
+    filt_fnames = fnmatch.filter(os.listdir(infold), 'sub-*' + imdl + '*.mat')
     acc = 0
     for iname in filt_fnames: 
         iname = iname[0:10]
