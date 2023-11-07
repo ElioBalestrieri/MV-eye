@@ -1,4 +1,4 @@
-function HPC_timeresolved_feats()
+function HPC_timeresolved_feats(nthreads)
 
 % add necessary packages
 addpath('/home/e/ebalestr/toolboxes/fieldtrip-20221223')
@@ -22,8 +22,7 @@ filelist = struct2table(dir(fullfile(indir , 'fullsegcleanmeg_*.mat'))); % '/rem
 filenames = filelist.name;
 
 % prepare subject number and thread parfor 
-nsubjs = length(filenames); nthreads = nsubjs;
-
+nsubjs = length(filenames);
 thisObj = parpool(nthreads);
 
 parfor isubj = 1:nsubjs
