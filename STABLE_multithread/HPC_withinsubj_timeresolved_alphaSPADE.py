@@ -28,9 +28,11 @@ from sklearn.preprocessing import FunctionTransformer
 # crossvalidation
 from sklearn.model_selection import cross_val_score
 
-# path definition: list all the files matching patterns to be piped into the parallel function
-path = '../STRG_computed_features/alphaSPADE/' + '*_timeresolved.mat'
-filelist = glob.glob(path)
+# path & subjIDs definition
+path = '../STRG_computed_features/alphaSPADE/segmented/'
+subjIDs = os.listdir(path); subjlist = []
+for ID in subjIDs:
+    subjlist.append(path+ID+'/')
 
 # output folder
 outfold = '../STRG_decoding_accuracy/alphaSPADE/'
@@ -44,14 +46,38 @@ class_pipeline = Pipeline([('scaler', RobustScaler()),
                            ('SVM', SVC(C=10, random_state=42))
                            ])
 
-########### function definition 
+########## concatenating function definition
+def cat_fstructs(subjPath):
+    
+    filelist = glob.glob(subjPath)
+    
+    acc = 0
+    for fname in filelist:
+        
+        mat_content = loadmat_struct(fname)
+        F = mat_content['variableName']
+
+        if acc == 0:
+            bigF = copy.deepcopy(F)
+        else:
+            bigF['trialinfo'] = np.concatenate((bigF['trialinfo'], F['trialinfo']), axis=0)
+            
+            for ifeat in F['single_feats'].keys():
+                bigF['single_feats'][ifeat] = np.concatenate((bigF['single_feats'][ifeat], F['single_feats'][ifeat]), axis=2)    
+
+        acc+=1
+        
+    return bigF
+
+
+
+########### parallel function definition 
 @dask.delayed
 def single_subj_classify(fname, outfold, class_pipeline, cv_fold=5):
 
-    # load stuff
-    mat_content = loadmat_struct(fname)
-    F = mat_content['variableName']
-    
+    # load & concatenate datasetss    
+    F = cat_fstructs(fname)
+       
     # extract subject ID from filename
     regex = re.compile(r'\d+')
     subjID = regex.findall(fname)[0]
@@ -90,7 +116,7 @@ def single_subj_classify(fname, outfold, class_pipeline, cv_fold=5):
     DF_accs = pd.DataFrame.from_dict(dict_accs)
     DF_accs = DF_accs.set_index('time (s)')
 
-    DF_accs.to_csv(fname_out)
+    DF_accs.to_csv(out_fname)
     print(subjID)   
     
     return(subjID)
@@ -98,10 +124,10 @@ def single_subj_classify(fname, outfold, class_pipeline, cv_fold=5):
 
 # loop pipeline 
 allsubjs = []
-for ifname in filelist:
+for ifname in subjlist:
 
     thisubjs = single_subj_classify(ifname, outfold, class_pipeline)
-    allsubjs.append(thisubj)
+    allsubjs.append(thisubjs)
     
 # actually launch process
 dask.compute(allsubjs)
