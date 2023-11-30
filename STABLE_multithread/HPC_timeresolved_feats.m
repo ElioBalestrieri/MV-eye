@@ -5,6 +5,7 @@ addpath('/home/e/ebalestr/toolboxes/fieldtrip-20221223')
 
 catch22_path = '/home/e/ebalestr/toolboxes/catch22/wrap_Matlab';
 addpath(catch22_path)
+
 helper_functions_path   = '../helper_functions/';
 addpath(helper_functions_path)
 
@@ -41,7 +42,7 @@ ft_defaults
 
 [fnames_sources, fnames_targets] = deal(cell(n_subjs, 1));
 
-for isubj = 1:n_subjs
+for isubj = 1:n_subjs 
     
     this_fname = filenames{isubj}; subjcode = this_fname(17:20);
     temp = load(fullfile(indir, this_fname));
@@ -109,17 +110,17 @@ end
 
 %% prepare subject number and thread parfor 
 nsubjs = length(fnames_sources);
-thisObj = parpool(nthreads);
+thisObj = parpool(nthreads); 
 
-parfor isubj = 1:nsubjs
+for isubj = 1:nsubjs 
 
     ft_defaults;
     fnames_S = fnames_sources{isubj}; fnames_T = fnames_targets{isubj};
-    n_files = length(fname_source);
+    n_files = length(fnames_S);
     
     % already define here moving window, constant for all files
     cfg = [];
-    cfg.stepsize = .01;
+    cfg.stepsize = .01; 
     cfg.winsize = .25;
 
     for ifile = 1:n_files
@@ -140,7 +141,7 @@ parfor isubj = 1:nsubjs
 
 end
 
-delete(thisObj)
+delete(thisObj) 
 
 end
 

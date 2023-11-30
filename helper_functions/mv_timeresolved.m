@@ -64,6 +64,7 @@ ntrls = length(dat.trial);
 % compute feats
 cfg_feats = mv_features_cfg();
 
+
 % loop through windows
 for istep = 1:nsteps
 
@@ -80,18 +81,20 @@ for istep = 1:nsteps
     
     % actual feature computation
     F = mv_features_timedomain(cfg_feats, minidat, F);
-    F = mv_wrap_catch22(cfg_feats, minidat, F);
+    F = mv_wrap_catch22(cfg_feats, minidat, F); 
 
     % preallocate 3d arrays with features at first step
     if istep == 1
-        for ifeat = fieldnames(F.single_feats)
+        for ifeat = fieldnames(F.single_feats)'
             this_feat = ifeat{1};
             outdat.single_feats.(this_feat) = nan(ntrls, nsteps, nchans);
+
+            disp(this_feat)
         end
     end
 
     % append computed features
-    for ifeat = fieldnames(F.single_feats)
+    for ifeat = fieldnames(F.single_feats)'
         this_feat = ifeat{1};
         outdat.single_feats.(this_feat)(:, istep, :) = F.single_feats.(this_feat); 
     end
