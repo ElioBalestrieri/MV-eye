@@ -62,13 +62,13 @@ def cat_fstructs(subjPath):
             bigF['trialinfo'] = np.concatenate((bigF['trialinfo'], F['trialinfo']), axis=0)
             
             for ifeat in F['single_feats'].keys():
-                bigF['single_feats'][ifeat] = np.concatenate((bigF['single_feats'][ifeat], F['single_feats'][ifeat]), axis=2)    
+                bigF['single_feats'][ifeat] = np.concatenate((bigF['single_feats'][ifeat], F['single_feats'][ifeat]), axis=0)    
 
         acc+=1
         
     return bigF
 
-
+#%%
 
 ########### parallel function definition 
 @dask.delayed
