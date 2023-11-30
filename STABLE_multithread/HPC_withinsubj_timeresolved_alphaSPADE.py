@@ -2,7 +2,6 @@
 import sys
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import copy
 import glob
 import re
@@ -32,7 +31,7 @@ from sklearn.model_selection import cross_val_score
 path = '../STRG_computed_features/alphaSPADE/segmented/'
 subjIDs = os.listdir(path); subjlist = []
 for ID in subjIDs:
-    subjlist.append(path+ID+'/')
+    subjlist.append(path+ID+'/*.mat')
 
 # output folder
 outfold = '../STRG_decoding_accuracy/alphaSPADE/'

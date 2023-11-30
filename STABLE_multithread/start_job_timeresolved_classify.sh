@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=1         # the number of tasks/processes per node
 #SBATCH --cpus-per-task=30          # the number cpus per task
 #SBATCH --partition=long          # on which partition to submit the job
-#SBATCH --time=7-00:00:00             # the max wallclock time (time limit your job will run)
+#SBATCH --time=5-00:00:00             # the max wallclock time (time limit your job will run)
  
  
 #SBATCH --job-name=TimeResolvedClassifier  # the name of your job

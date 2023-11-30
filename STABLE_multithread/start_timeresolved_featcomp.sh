@@ -2,7 +2,7 @@
  
 #SBATCH --nodes=1                   # the number of nodes you want to reserve
 #SBATCH --ntasks-per-node=1         # the number of tasks/processes per node
-#SBATCH --cpus-per-task=15         # the number cpus per task
+#SBATCH --cpus-per-task=30         # the number cpus per task
 #SBATCH --partition=long          # on which partition to submit the job
 #SBATCH --time=7-00:00:00            # the max wallclock time (time limit your job will run)
 #SBATCH --job-name=timeResolvedFeatures    # the name of your job
@@ -15,4 +15,4 @@ module load GCC/11.2.0
 module load matlab/R2022a
 
 # START THE APPLICATION
-matlab -nodisplay -nosplash -nodesktop -r "HPC_timeresolved_feats(15); exit;"
+matlab -nodisplay -nosplash -nodesktop -r "HPC_timeresolved_feats(30); exit;"
