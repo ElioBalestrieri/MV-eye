@@ -3,7 +3,6 @@ import sys
 import numpy as np
 import pandas as pd
 import copy
-import glob
 import re
 import os
 
@@ -28,15 +27,15 @@ from sklearn.preprocessing import FunctionTransformer
 from sklearn.model_selection import cross_val_score
 
 # path & subjIDs definition
-path = '../STRG_computed_features/alphaSPADE/segmented/'
+path = '../STRG_computed_features/alphaSPADE/timeresolved_split_feats/'
 subjIDs = os.listdir(path); subjlist = []
 for ID in subjIDs:
     subjlist.append(path+ID+'/*.mat')
 
 # output folder
-outfold = '../STRG_decoding_accuracy/alphaSPADE/'
+outfold = '../STRG_decoding_accuracy/alphaSPADE/timeresolved/'
 if not(os.path.isdir(outfold)):
-    os.mkdir(outfold)
+    os.makedirs(outfold)
 
 # define the pipeline to be used
 class_pipeline = Pipeline([('scaler', RobustScaler()),
@@ -45,78 +44,67 @@ class_pipeline = Pipeline([('scaler', RobustScaler()),
                            ('SVM', SVC(C=10, random_state=42))
                            ])
 
-########## concatenating function definition
-def cat_fstructs(subjPath):
-    
-    filelist = glob.glob(subjPath)
-    
-    acc = 0
-    for fname in filelist:
-        
-        mat_content = loadmat_struct(fname)
-        F = mat_content['variableName']
-
-        if acc == 0:
-            bigF = copy.deepcopy(F)
-        else:
-            bigF['trialinfo'] = np.concatenate((bigF['trialinfo'], F['trialinfo']), axis=0)
-            
-            for ifeat in F['single_feats'].keys():
-                bigF['single_feats'][ifeat] = np.concatenate((bigF['single_feats'][ifeat], F['single_feats'][ifeat]), axis=0)    
-
-        acc+=1
-        
-    return bigF
-
-#%%
 
 ########### parallel function definition 
 @dask.delayed
-def single_subj_classify(fname, outfold, class_pipeline, cv_fold=5):
+def single_subj_classify(fpath, outfold, class_pipeline, cv_fold=5):
 
-    # load & concatenate datasetss    
-    F = cat_fstructs(fname)
        
     # extract subject ID from filename
     regex = re.compile(r'\d+')
-    subjID = regex.findall(fname)[0]
+    subjID = regex.findall(fpath)[0]
     
-    # define fname for output saving
-    out_fname = outfold + subjID + '_timeresolved_acc.csv'
+    # each subj needs an output folder
+    subjspec_outfold = outfold + subjID + '/'
+    if not(os.path.isdir(subjspec_outfold)):
+        os.makedirs(subjspec_outfold)
 
-    # preamble
-    mask_evs = F['trialinfo'][:,1]>=10 # erase catch, fttb
-    Y = F['trialinfo'][mask_evs,1] # 6 classes classification
-    y_H_M = (Y==11) | (Y==22)
-    randY = copy.deepcopy(y_H_M)
-    np.random.shuffle(randY)
     
-    dict_accs = {}
-    for ifeat in F['single_feats'].keys():
-
-        ntpoints = F['single_feats'][ifeat].shape[1]    
-        dict_accs[ifeat] = []
-
+    hdr_fname = fpath + subjID + '_HDR.mat'
+    HDR = loadmat_struct(hdr_fname)['HDR']
+    
+    featnames = list(HDR['featnames'])
+    
+    for thisfeat in featnames:
+        
+        tmp_fname = fpath + subjID + '_' + thisfeat + '.mat'
+        D = loadmat_struct(tmp_fname)['Decode']
+    
+        mask_evs = D['rawY'][:,1]>=10 # erase catch, fttb
+        Y = D['rawY'][mask_evs,1] # 6 classes classification
+        y_H_M = (Y==11) | (Y==22)
+        randY = copy.deepcopy(y_H_M)
+        np.random.shuffle(randY)
+    
+        Xovertime = D['X'][mask_evs, :, :]
+        ntpoints = Xovertime.shape[1]    
+        
+        dict_accs = {'time_winCENter' : HDR['time_winCENter'],
+                     'time_winOFFset' : HDR['time_winOFFset'],
+                     'time_winONset' : HDR['time_winONset'],
+                     'accuracy' : [],
+                     'delta_accuracy' : []}
+        
         for iT in range(ntpoints):
-
-            X = F['single_feats'][ifeat][:, iT, mask_evs].T
-
+    
+            X = Xovertime[:, iT, :]
             acc = cross_val_score(class_pipeline, X, y_H_M, cv=cv_fold, 
                                   scoring='balanced_accuracy').mean()
             rand_acc = cross_val_score(class_pipeline, X, randY, cv=cv_fold, 
                                         scoring='balanced_accuracy').mean()
-
-            dict_accs[ifeat].append(acc-rand_acc)
-
-        print(ifeat + ': ' + str(iT) + '/' + str(ntpoints))
     
-    # finalize dataframe
-    dict_accs['time (s)'] = F['time_winCENter']
-    DF_accs = pd.DataFrame.from_dict(dict_accs)
-    DF_accs = DF_accs.set_index('time (s)')
-
-    DF_accs.to_csv(out_fname)
-    print(subjID)   
+            dict_accs['accuracy'].append(acc)
+            dict_accs['delta_accuracy'].append(acc-rand_acc)
+            print(iT)
+            
+        # define fname for output saving
+        out_fname = subjspec_outfold + subjID + '_' + thisfeat +'.csv'
+        
+        # save Dataframe as csv
+        DF_accs = pd.DataFrame.from_dict(dict_accs)
+        DF_accs.to_csv(out_fname)
+        
+        print(subjID)   
     
     return(subjID)
 
