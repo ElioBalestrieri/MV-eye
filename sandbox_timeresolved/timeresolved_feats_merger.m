@@ -37,32 +37,47 @@ for isubj = subjs
 
             save(fullfile(target_dir_feats, [ID, '_HDR.mat']), "HDR");
 
-            ACC = F.single_feats;
-            rawY = F.trialinfo;
+        end
+        
+        rawY = F.trialinfo;
 
-        else
-
-            for ifeat = HDR.featnames
-                ACC.(ifeat{1}) = cat(1, ACC.(ifeat{1}), F.single_feats.(ifeat{1}));
-            end
-
-            rawY = [rawY; F.trialinfo]; %#ok<AGROW> 
+        for ifeat = HDR.featnames
+                
+            Decode = [];
+            Decode.X = F.single_feats.(ifeat{1});
+            Decode.rawY = rawY;
+            
+            save(fullfile(target_dir_feats, [ID, '_', ifeat{1}, '_part', num2mstr(ifile), '.mat']), 'Decode')
 
         end
+
 
         fprintf('\nFile %i/%i', ifile, length(fnames))
 
     end
 
     for ifeat = HDR.featnames
+        
+        for ifile = 1:length(fnames)
 
-        Decode = [];
-        Decode.X = ACC.(ifeat{1});
-        Decode.rawY = rawY;
+            temp = load(fullfile(target_dir_feats, [ID, '_', ifeat{1}, '_part', num2mstr(ifile), '.mat']), 'Decode');
 
+            if ifile == 1
+                
+                Decode = temp.Decode;
+            
+            else
+                
+                Decode.X = cat(1, Decode.X, temp.Decode.X);
+                Decode.rawY = cat(1, Decode.rawY, temp.Decode.rawY);
+                
+            end
+            
+        end
+        
         save(fullfile(target_dir_feats, [ID, '_', ifeat{1} '.mat']), 'Decode')
 
-        fprintf('%s; ', ifeat{1})
+        fprintf('%s merged; ', ifeat{1})
 
     end
 
