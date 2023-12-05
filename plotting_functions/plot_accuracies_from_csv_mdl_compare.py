@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pingouin as pg
 
-infold = '../STRG_decoding_accuracy/'
+infold = '../STRG_decoding_accuracy/Mdl_comparison/'
 plt.close('all')
 
 #%% single subjects
@@ -159,7 +159,8 @@ for rounded_DF in DS_WN_BW_list:
 # 1. winning "model": fullFFT, vs time feats, vs freq bands
 
 # 1a: within subjects accuracy
-DF_full_set_WN = DF_fullsample_WN.loc[DF_fullsample_WN['feature']=='full_set', :]
+DF_full_set_WN = DF_fullsample_WN.loc[(DF_fullsample_WN['feature']=='full_set') & 
+                                      (DF_fullsample_WN['MdlType']!='FTM'), :]
 aov_Mdl_WN = pg.rm_anova(data=DF_full_set_WN, dv='decoding_accuracy', 
                               within=['MdlType', 'ExpCond'], subject='subjID',
                               detailed=False)        
@@ -273,29 +274,62 @@ print(ttest_FFtTimeFeats_ECEO_BW.round(3).to_string())
 #%% subplot within
 plt.figure()
 plt.subplot(221)
-ax = sns.barplot(data=DF_full_set_WN.round(3), y='decoding_accuracy', x='MdlType',
-                 hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
+# ax = sns.barplot(data=DF_full_set_WN.round(3), y='decoding_accuracy', x='MdlType',
+#                  hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
 
-plt.ylim((.5, 1))
+plotdata1 = DF_full_set_WN.loc[DF_full_set_WN['MdlType']!='FTM', :]
+
+# ax = sns.stripplot(data=plotdata1, y='decoding_accuracy', x='MdlType',
+#                   palette="ch:start=.2,rot=-.3, dark=.4", size=2)
+ax = sns.violinplot(data=plotdata1, y='decoding_accuracy', x='MdlType',
+                  palette="ch:start=.2,rot=-.3, dark=.4", fill=False,
+                  split=True, hue='ExpCond')
+
+
+
+plt.ylim((.5, 1.001))
 plt.title('Features type\n within subject accuracy')
 plt.legend([],[], frameon=False)
+plt.ylabel('balanced accuracy')
+plt.xlabel('Feature set type')
 
 # subplot between
 plt.subplot(222)
-ax = sns.barplot(data=DF_full_set_BW, y='decoding_accuracy', x='MdlType',
-            hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
-plt.ylim((.5, 1))
-plt.legend([],[], frameon=False)
+
+plotdata2 = DF_full_set_BW.loc[DF_full_set_BW['MdlType']!='FTM', :]
+
+# ax = sns.barplot(data=DF_full_set_BW, y='decoding_accuracy', x='MdlType',
+#             hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
+# ax = sns.stripplot(data=plotdata2, y='decoding_accuracy', x='MdlType',
+#                   palette="ch:start=.2,rot=-.3, dark=.4", size=2)
+ax = sns.violinplot(data=plotdata2, y='decoding_accuracy', x='MdlType',
+                  palette="ch:start=.2,rot=-.3, dark=.4", fill=False,
+                  split=True, hue='ExpCond')
+plt.ylabel('balanced accuracy')
+plt.xlabel('Feature set type')
+
+plt.ylim((.25, 1.001))
 
 plt.title('Features type\n between subjects (LOO) accuracy')
+plt.legend([],[], frameon=False)
+# sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+
+plt.tight_layout()
+
+#
 
 # subplot across
 plt.subplot(223)
-ax = sns.barplot(data=DF_across.round(3), x='MdlType', y='decoding accuracy',
+
+plotdata3 = DF_across.loc[DF_across['MdlType']!='FTM', :]
+
+
+ax = sns.barplot(data=plotdata3, x='MdlType', y='decoding accuracy',
                   hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar=None)
-plt.ylim((.5, 1))
+plt.ylim((.75, 1))
 plt.title('Features type\n across subjects accuracy')
 sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+plt.ylabel('balanced accuracy')
 
 plt.tight_layout()
 plt.show()
@@ -307,7 +341,11 @@ CompTypes = ['between', 'within']
 ExpConds = ['ECEO', 'VS'] # repeated for code readability
 MdlTypes = ['FullFFT', 'FreqBands', 'TimeFeats', 'FreqBands']
 
+# plt.figure()
+
 acc_comp = -1
+
+acc_fig = 0
 for iComp in list_DFs_BW_WN:
     
     acc_comp += 1
@@ -315,7 +353,7 @@ for iComp in list_DFs_BW_WN:
     
     for iCond in ExpConds:
         
-        tmp_DF = iComp.loc[iComp['ExpCond']==iCond, :]
+        tmp_DF = iComp.loc[(iComp['ExpCond']==iCond) & (iComp['feature']!='fullFFT'), :]
             
         # bind two columns (feature and MdlType) in order to allow comparisons
         # between single features across all models, in each comparison of interest
@@ -333,6 +371,8 @@ for iComp in list_DFs_BW_WN:
         best10_feats_sorted = full_feats_sorted.iloc[:, 0:10]
 
         plt.figure()
+        # acc_fig +=1
+        # plt.subplot(2, 2, acc_fig)
 
         ax = sns.stripplot(data=best10_feats_sorted, orient='h', 
                            palette="ch:dark=.25,light=.5,hue=2", alpha=.4)
@@ -356,10 +396,10 @@ for iComp in list_DFs_BW_WN:
             plt.text(.6, acc_ypos, str(round(itxt, 3)), color=cpal[acc_color])
             acc_ypos += 1; acc_color += 1
 
-        plt.tight_layout()
+        plt.tight_layout()     
 
-        plt.show()
-
+# 
+    
 # #%% 3. plot the best feats within subjects and bands
 
 # # usual long to wide

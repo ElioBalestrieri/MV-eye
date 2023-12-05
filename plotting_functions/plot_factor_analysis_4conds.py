@@ -30,7 +30,7 @@ from mv_python_utils import cat_subjs_train_test
 #%% folder(s) definition & cond type
 
 # output folder
-infold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_decoding_accuracy/'
+infold = '/remotedata/AgGross/TBraiC/MV-eye/STRG_decoding_accuracy/Mdl_comparison/'
 outfold = infold
 
 if not(os.path.isdir(outfold)):
@@ -57,8 +57,8 @@ for imdl in mdltypes:
     fullX_train, fullX_test, Y_train, Y_test, subjID_trials_labels = cat_subjs_train_test(back_infold, strtsubj=0, endsubj=29, 
                                                                     ftype=list_ExpConds, tanh_flag=True, 
                                                                     compress_flag=True, pca_kept_var=.9)     
-    L_Xtrain.append(fullX_train['PC_aggregate'])
-    L_Xtest.append(fullX_test['PC_aggregate'])
+    L_Xtrain.append(fullX_train['PC_full_set'])
+    L_Xtest.append(fullX_test['PC_full_set'])
     PC_IDs.append(fullX_train['list_PC_identifiers'])
     
 mergedMdls_train = np.concatenate(L_Xtrain, axis=1)

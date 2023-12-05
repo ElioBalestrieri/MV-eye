@@ -7,7 +7,7 @@
 #SBATCH --time=7-00:00:00             # the max wallclock time (time limit your job will run)
  
  
-#SBATCH --job-name=decodeFreqBands  # the name of your job
+#SBATCH --job-name=HCTSA_alphaSPADE  # the name of your job
 #SBATCH --mail-type=ALL             # receive an email when your job starts, finishes normally or is aborted
 #SBATCH --mail-user=elio.balestrieri@gmail.com # your mail address
  
@@ -21,4 +21,4 @@ module load dask
 module load h5py
 
 # START THE APPLICATION
-python HPC_freqbands_classifier.py 
+python HPC_HCTSA_alphaSPADE.py 
