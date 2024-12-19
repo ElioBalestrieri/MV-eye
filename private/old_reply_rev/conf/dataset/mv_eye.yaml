@@ -1,0 +1,9 @@
+self: mv_eye
+filepath: "/home/balestrieri/TBraiC/MV-eye/STRG_data/reconstruct_signal"
+subj_id: "01"
+exp_compare: "VS"
+signal_length: 256
+with_time_emb: True
+cond_time_dim: 32
+train_test_split: 1.0
+split_seed: 0

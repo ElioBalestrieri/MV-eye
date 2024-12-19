@@ -1,0 +1,8 @@
+defaults:
+  - base: wandb_default
+  - dataset: mv_eye
+  - network: lconv_mv_eye
+  - diffusion_kernel: white_noise
+  - diffusion: diffusion_linear_200
+  - optimizer: base_optimizer
+  - classifier: no_classifier
