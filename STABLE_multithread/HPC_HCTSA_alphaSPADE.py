@@ -57,7 +57,7 @@ for ifile in filelist:
 # In[3]: parallel function definition
 
 @dask.delayed
-def decode_HCTSA(infold, this_subj, class_pipeline, cv_fold=5):
+def decode_HCTSA(infold, this_subj, outfold, class_pipeline, cv_fold=5):
 
     # read file
     f = h5py.File(infold + this_subj + '.h5', 'r')
@@ -117,7 +117,7 @@ def decode_HCTSA(infold, this_subj, class_pipeline, cv_fold=5):
 allsubjs = []
 for isubj in subjlist:
 
-    thisubj = decode_HCTSA(isubj, outfold, class_pipeline)
+    thisubj = decode_HCTSA(infold, isubj, outfold, class_pipeline)
     allsubjs.append(thisubj)
     
 # actually launch process
