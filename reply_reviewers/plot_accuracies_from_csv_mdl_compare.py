@@ -58,163 +58,50 @@ for isubj in range(up_to_subj):
             allsubjs_within_DFs.append(tmp)
 
             # between subjects
-            # fname_between = infold + 'ID_' + subjname + '_leftout_' + iExp + '_' + iMdl + '_intersubjs_accs.csv'
-            # DF_BW = pd.read_csv(fname_between)
+            fname_between = infold_old + 'ID_' + subjname + '_leftout_' + iExp + '_' + iMdl + '_intersubjs_accs.csv'
+            DF_BW = pd.read_csv(fname_between)
 
-            # tmp = DF_BW.set_index('Unnamed: 0').stack().to_frame().\
-            #             reset_index().rename(columns={'Unnamed: 0': 'freq_band', 
-            #                                           'level_1': 'feature', 
-            #                                           0: 'decoding_accuracy'})   
-            # tmp = tmp.drop('freq_band', axis=1)
+            tmp = DF_BW.set_index('Unnamed: 0').stack().to_frame().\
+                        reset_index().rename(columns={'Unnamed: 0': 'freq_band', 
+                                                      'level_1': 'feature', 
+                                                      0: 'decoding_accuracy'})   
+            tmp = tmp.drop('freq_band', axis=1)
             
-            # # add columns
-            # tmp['subjID'] = [subjname] * tmp.shape[0]
-            # tmp['ExpCond'] = [iExp] * tmp.shape[0]
-            # tmp['MdlType'] = [iMdl] * tmp.shape[0]
+            # add columns
+            tmp['subjID'] = [subjname] * tmp.shape[0]
+            tmp['ExpCond'] = [iExp] * tmp.shape[0]
+            tmp['MdlType'] = [iMdl] * tmp.shape[0]
 
-            # allsubjs_between_DFs.append(tmp)
+            allsubjs_between_DFs.append(tmp)
              
 DF_fullsample_WN = pd.concat(allsubjs_within_DFs, ignore_index=True) 
-# DF_fullsample_BW = pd.concat(allsubjs_between_DFs, ignore_index=True) 
+DF_fullsample_BW = pd.concat(allsubjs_between_DFs, ignore_index=True) 
 
 
 #%% across subjects comparisons
 
-# DF_across_CVed = pd.read_csv(infold + 'AS_scaled.csv')
+#
+DF = pd.read_csv(infold + 'AS_scaled_WS.csv')
+full_sets_mask = DF.feature.str.contains('full')
+DFfull = DF.loc[full_sets_mask, :]
 
-# mat_acc_across = np.empty((len(ExpConds), len(MdlTypes)))
+SVM_DFfull = DFfull.loc[DFfull['classifier']=='SVM', :]
+SVM_DFfull = SVM_DFfull.sort_values(by='condition', ascending=False)
+SVM_DFfull = SVM_DFfull.sort_values(by='model')
 
-# ls_dec_acc = []; ls_exp_cond = []; ls_mdltype = []
+aov_Mdl_across = pg.rm_anova(data=SVM_DFfull, dv='accuracy', 
+                             within=['model', 'condition'], subject='cvFolds',
+                             detailed=True)        
+print(aov_Mdl_across)
 
-# acc_expcond = 0
-# for iExp in ExpConds:
-    
-#     acc_mdl = 0
-#     for iMdl in MdlTypes:
-                
-#         fname_across = infold + 'AcrossSubjs_PC_' + iExp + '_' + iMdl + '_TESTSCALER.csv'
-#         tmp_DF = pd.read_csv(fname_across)
+pw_comps = pg.pairwise_tests(data=SVM_DFfull, dv='accuracy', 
+                             within=['condition', 'model'], subject='cvFolds', 
+                             effsize='cohen', padjust='fdr_bh')
 
-#         mat_acc_across[acc_expcond, acc_mdl] = tmp_DF['PC_full_set'].loc[0]
-        
-#         ls_dec_acc.append(tmp_DF['PC_full_set'].loc[0])
-#         ls_exp_cond.append(iExp)
-#         ls_mdltype.append(iMdl)
-    
-#         acc_mdl += 1
-        
-#     acc_expcond += 1
-    
-# tmp_dict = {'MdlType' : ls_mdltype,
-#             'ExpCond' : ls_exp_cond,
-#             'decoding accuracy' : ls_dec_acc}
+pw_comps.to_csv('pairwise_across.csv')
+print(pw_comps.round(3).to_string())
 
-DF_across = pd.read_csv(infold + 'AS_scaled_WS.csv')# pd.DataFrame.from_dict(tmp_dict)    
-# # DF_across = pd.DataFrame(data=mat_acc_across, index=ExpConds, columns=MdlTypes)  
-#%%
-
-# mat_acc_across = np.empty((len(ExpConds), len(MdlTypes)))
-
-# ls_dec_acc = []; ls_exp_cond = []; ls_mdltype = []
-
-# acc_expcond = 0
-# for iExp in ExpConds:
-    
-#     acc_mdl = 0
-#     for iMdl in MdlTypes:
-                
-#         fname_across = infold_old + 'AcrossSubjs_PC_' + iExp + '_' + iMdl + '.csv'
-#         tmp_DF = pd.read_csv(fname_across)
-
-#         mat_acc_across[acc_expcond, acc_mdl] = tmp_DF['PC_aggregate'].loc[0]
-        
-#         ls_dec_acc.append(tmp_DF['PC_aggregate'].loc[0])
-#         ls_exp_cond.append(iExp)
-#         ls_mdltype.append(iMdl)
-    
-#         acc_mdl += 1
-        
-#     acc_expcond += 1
-    
-# tmp_dict = {'MdlType' : ls_mdltype,
-#             'ExpCond' : ls_exp_cond,
-#             'decoding accuracy' : ls_dec_acc}
-
-# DF_across_old = pd.DataFrame.from_dict(tmp_dict)    
-
-#%% summary across
-
-# DF_cat = pd.concat((DF_across_old, DF_across))
-# tmp_ = pd.DataFrame.from_dict({'analytical approach' : ['WS scale']*6 + ['AS scale']*6})
-# DF_cat = DF_cat.join(tmp_)
-
-
-# plt.figure()
-# ax = sns.barplot(data=DF_cat, x='MdlType', y='decoding accuracy',
-#                   hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar=None)
-# plt.ylim((.75, 1))
-# plt.title('Across subjects accuracy', fontsize=16)
-# plt.legend(title='Classification type', labels=['EC / EO', 'BSL / VS'])
-# sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
-# plt.ylabel('balanced accuracy', fontsize=12)
-# plt.xlabel('Feature set', fontsize=12)
-# plt.tight_layout()
-# # plt.show()
-
-
-
-#%% plotting
-
-# 2. for each freq band plot the ordered full set of features.
-# moreover, select the best 3 features in each freq band
-
-temp_MdlTypes = ['TimeFeats', 'FreqBands']# plt.figure()
-# ax = sns.barplot(data=DF_across.round(3), x='MdlType',
-#                  hue='Index', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
-
-# DS_WN_BW_list = [DF_fullsample_WN.round(3), DF_fullsample_BW.round(3)]
-list_compname = ['within subj', 'bewteen subj']
-
-
-# acc_data = -1
-
-# for rounded_DF in DS_WN_BW_list:
-
-#     acc_data += 1
-#     name_comp = list_compname[acc_data]
-
-#     for iCond in ExpConds:
-
-#         for iMdl in temp_MdlTypes:
-
-#             # plt.figure()
-#             this_DF = rounded_DF.loc[rounded_DF['MdlType']==iMdl, :]
-#             this_DF = this_DF.loc[this_DF['ExpCond']==iCond]
-
-#             # go to wide format to allow sorting
-#             wide_DF = pd.pivot(this_DF, index='subjID', columns='feature',
-#                                values='decoding_accuracy')
-#             new_idx = wide_DF.mean().sort_values(ascending=False)
-#             wide_DF = wide_DF.reindex(new_idx.index, axis=1)
-
-#             # # plot
-#             # ax = sns.barplot(data=wide_DF, orient='h',
-#             #                  palette="ch:start=.2,rot=-.3, dark=.4")
-#             #
-#             # plt.tight_layout()
-#             # plt.title(name_comp + ' SVM,\n' + iCond + ', ' +  iMdl)
-#             # plt.xlabel('balanced accuracy')
-#             # plt.xlim((.5, 1))
-
-#             # plt.show()
-    
-#%% stats & plots
-# 1. compare the full set of features in 3 different conditions: fullFFT, FreqBands
-# TimeFeats
-
-# 1. winning "model": fullFFT, vs time feats, vs freq bands
-
-# 1a: within subjects accuracy
+#%% within subjects stats
 DF_full_set_WN = DF_fullsample_WN.loc[DF_fullsample_WN['feature']=='full_set', :]
 aov_Mdl_WN = pg.rm_anova(data=DF_full_set_WN, dv='decoding_accuracy', 
                               within=['MdlType', 'ExpCond'], subject='subjID',
@@ -223,183 +110,81 @@ print('\nANOVA within (full)')
 print(aov_Mdl_WN.round(3).to_string())
 DF_full_set_WN.groupby(['ExpCond', 'MdlType'])['decoding_accuracy'].mean()   
 
-
 pw_tests = pg.pairwise_tests(data=DF_full_set_WN, dv='decoding_accuracy',
                              within=['ExpCond', 'MdlType'],  subject='subjID',
                              alternative='two-sided', interaction=True, 
                              padjust='fdr_bh', effsize='cohen')
-print(pw_tests)
 
-mask_ = (DF_fullsample_WN['feature']=='full_set') & ((DF_fullsample_WN['MdlType']=='FreqBands') | (DF_fullsample_WN['MdlType']=='TimeFeats'))
-restricted_WN = DF_fullsample_WN.loc[mask_, :]
-aov_Mdl_WN_restr = pg.rm_anova(data=restricted_WN, dv='decoding_accuracy', 
-                              within=['MdlType', 'ExpCond'], subject='subjID',
-                              detailed=False)
-print('\nANOVA within (FreqBands & TimeFeats only)')
-print(aov_Mdl_WN_restr.round(3).to_string())
+print(pw_tests.round(3).to_string())
 
 
-ttest_FreqTime_WN = pg.ttest(DF_full_set_WN['decoding_accuracy'].loc[
-                                        DF_full_set_WN['MdlType']=='FreqBands'],
-                            DF_full_set_WN['decoding_accuracy'].loc[
-                                        DF_full_set_WN['MdlType']=='TimeFeats'], 
-                            paired=True)
-print('\nTTest within FreqBands vs TimeFeats')
-print(ttest_FreqTime_WN.round(3).to_string())
+#%% between subjects stats
+DF_full_set_BW = DF_fullsample_BW.loc[DF_fullsample_BW['feature']=='aggregate', :]
+aov_Mdl_BW = pg.rm_anova(data=DF_full_set_BW, dv='decoding_accuracy', 
+                              within=['MdlType', 'ExpCond'], subject='subjID')        
+print('\nANOVA between (full)')
+print(aov_Mdl_BW.round(3).to_string())
+DF_full_set_BW.groupby(['ExpCond', 'MdlType'])['decoding_accuracy'].mean()   
 
 
-ttest_FreqTime_VS_WN = pg.ttest(DF_full_set_WN['decoding_accuracy'].loc[
-    (DF_full_set_WN['MdlType']=='FreqBands') & (DF_full_set_WN['ExpCond']=='VS')],
-                            DF_full_set_WN['decoding_accuracy'].loc[
-    (DF_full_set_WN['MdlType']=='TimeFeats') & (DF_full_set_WN['ExpCond']=='VS')], 
-                            paired=True)
-print('\nTTest within FreqBands vs TimeFeats in Visual Stimulation')
-print(ttest_FreqTime_VS_WN.round(3).to_string())
+pw_tests = pg.pairwise_tests(data=DF_full_set_BW, dv='decoding_accuracy',
+                             within=['ExpCond', 'MdlType'],  subject='subjID',
+                             alternative='two-sided', interaction=True, 
+                             padjust='fdr_bh', effsize='cohen')
 
-
-ttest_FreqTime_VS_WN = pg.ttest(DF_fullsample_WN['decoding_accuracy'].loc[
-    (DF_fullsample_WN['MdlType']=='FreqBands') & (DF_fullsample_WN['ExpCond']=='ECEO') & (DF_fullsample_WN['feature']=='full_set')],
-                            DF_fullsample_WN['decoding_accuracy'].loc[
-    (DF_fullsample_WN['MdlType']=='TimeFeats') & (DF_fullsample_WN['ExpCond']=='ECEO') & (DF_fullsample_WN['feature']=='MCL')],
-                            paired=True)
-print('\nTTest within FreqBands vs MCL in ECEO')
-print(ttest_FreqTime_VS_WN.round(3).to_string())
-
-
-ttest_FreqTime_ECEO_WN = pg.ttest(DF_full_set_WN['decoding_accuracy'].loc[
-    (DF_full_set_WN['MdlType']=='FreqBands') & (DF_full_set_WN['ExpCond']=='ECEO')],
-                            DF_full_set_WN['decoding_accuracy'].loc[
-    (DF_full_set_WN['MdlType']=='TimeFeats') & (DF_full_set_WN['ExpCond']=='ECEO')], 
-                            paired=True)
-print('\nTTest within FreqBands vs TimeFeats in ECEO')
-print(ttest_FreqTime_ECEO_WN.round(3).to_string())
-
-
-
-# # 2a: between 
-# DF_full_set_BW = DF_fullsample_BW.loc[DF_fullsample_BW['feature']=='aggregate', :]
-# aov_Mdl_BW = pg.rm_anova(data=DF_full_set_BW, dv='decoding_accuracy', 
-#                               within=['MdlType', 'ExpCond'], subject='subjID')        
-# print('\nANOVA between (full)')
-# print(aov_Mdl_BW.round(3).to_string())
-# DF_full_set_BW.groupby(['ExpCond', 'MdlType'])['decoding_accuracy'].mean()   
-
-
-# ttest_FreqTime_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
-#                                 DF_full_set_BW['MdlType']=='FreqBands'], 
-#                             DF_full_set_BW['decoding_accuracy'].loc[
-#                                 DF_full_set_BW['MdlType']=='TimeFeats'], 
-#                             paired=True)
-# print('\nTTest between FreqBands vs TimeFeats')
-# print(ttest_FreqTime_BW.round(3).to_string())
-
-# ttest_FFTtime_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
-#                                 DF_full_set_BW['MdlType']=='FullFFT'], 
-#                             DF_full_set_BW['decoding_accuracy'].loc[
-#                                 DF_full_set_BW['MdlType']=='TimeFeats'], 
-#                             paired=True)
-# print('\nTTest between FullFFT vs TimeFeats')
-# print(ttest_FFTtime_BW.round(3).to_string())
-
-# ttest_FreqBandstime_VS_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='FreqBands') & (DF_full_set_BW['ExpCond']=='VS')], 
-#                             DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='VS')], 
-#                             paired=True)
-# print('\nTTest between FreqBands vs TimeFeats in Visual Stimulation')
-# print(ttest_FreqBandstime_VS_BW.round(3).to_string())
-
-
-# ttest_FreqsTime_ECEO_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='FreqBands') & (DF_full_set_BW['ExpCond']=='ECEO')], 
-#                             DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='ECEO')], 
-#                             paired=True)
-# print('\nTTest within FreqBands vs TimeFeats in ECEO')
-# print(ttest_FreqsTime_ECEO_BW.round(3).to_string())
-
-# ttest_FFTTimeFeats_VS_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='FullFFT') & (DF_full_set_BW['ExpCond']=='VS')],
-#                             DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='VS')],
-#                             paired=True)
-# print('\nTTest between FFT vs TimeFeats in Visual Stimulation')
-# print(ttest_FFTTimeFeats_VS_BW.round(3).to_string())
-
-# ttest_FFtTimeFeats_ECEO_BW = pg.ttest(DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='FullFFT') & (DF_full_set_BW['ExpCond']=='ECEO')],
-#                             DF_full_set_BW['decoding_accuracy'].loc[
-#     (DF_full_set_BW['MdlType']=='TimeFeats') & (DF_full_set_BW['ExpCond']=='ECEO')],
-#                             paired=True)
-# print('\nTTest between FullFFT vs TimeFeats in ECEO')
-# print(ttest_FFtTimeFeats_ECEO_BW.round(3).to_string())
+print(pw_tests.round(3).to_string())
 
 
 #%% subplot within
 plt.figure()
-plt.subplot(121)
-# ax = sns.barplot(data=DF_full_set_WN.round(3), y='decoding_accuracy', x='MdlType',
-#                  hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
-
+plt.subplot(131)
 plotdata1 = DF_full_set_WN
 
-
-# ax = sns.stripplot(data=plotdata1, y='decoding_accuracy', x='MdlType',
-#                   palette="ch:start=.2,rot=-.3, dark=.4", size=2)
 ax = sns.violinplot(data=plotdata1, y='decoding_accuracy', x='MdlType',
                   palette="ch:start=.2,rot=-.3, dark=.4", fill=False,
                   split=True, hue='ExpCond', cut=0, order=MdlTypes)
 
-plt.ylim((.7, 1.001))
-plt.title('Within subject accuracy', fontsize=16)
+plt.ylim((.5, 1.001))
+plt.title('Within subjects accuracy', fontsize=16)
 plt.legend([],[], frameon=False)
 plt.ylabel('accuracy', fontsize=12)
 plt.xlabel('Feature set', fontsize=12)
 
-#
-
 # subplot between
-# plt.subplot(132)
-# plt.figure()
+plt.subplot(132)
 
-# plotdata2 = DF_full_set_BW.loc[DF_full_set_BW['MdlType']!='FTM', :]
+plotdata2 = DF_full_set_BW.loc[DF_full_set_BW['MdlType']!='FTM', :]
+ax = sns.violinplot(data=plotdata2, y='decoding_accuracy', x='MdlType',
+                  palette="ch:start=.2,rot=-.3, dark=.4", fill=False,
+                  split=True, hue='ExpCond', cut=0)
+plt.ylabel('balanced accuracy', fontsize=12)
+plt.xlabel('Feature set', fontsize=12)
 
-# # ax = sns.barplot(data=DF_full_set_BW, y='decoding_accuracy', x='MdlType',
-# #             hue='ExpCond', palette="ch:start=.2,rot=-.3, dark=.4", errorbar="se")
-# # ax = sns.stripplot(data=plotdata2, y='decoding_accuracy', x='MdlType',
-# #                   palette="ch:start=.2,rot=-.3, dark=.4", size=2)
-# ax = sns.violinplot(data=plotdata2, y='decoding_accuracy', x='MdlType',
-#                   palette="ch:start=.2,rot=-.3, dark=.4", fill=False,
-#                   split=True, hue='ExpCond', cut=0)
-# plt.ylabel('balanced accuracy', fontsize=12)
-# plt.xlabel('Feature set', fontsize=12)
+plt.ylim((.3, 1.001))
 
-# plt.ylim((.3, 1.001))
+plt.title('Between subjects accuracy', fontsize=16)
+plt.legend([],[], frameon=False)
+# sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
 
-# plt.title('Between subjects accuracy', fontsize=16)
-# plt.legend([],[], frameon=False)
-# # sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+# plt.tight_layout()
 
-# # plt.tight_layout()
-
-# #
 
 # subplot across
-plt.subplot(122)
-# plt.figure()
+plt.subplot(133)
 
-plotdata3 = DF_across.loc[DF_across['classifier']=='SVM', :]
-
-sns.violinplot(data=plotdata3, y='accuracy', x='model',
+sns.violinplot(data=SVM_DFfull, y='accuracy', x='model',
                   palette="ch:start=.2,rot=-.3, dark=.4", fill=False,
                   split=True, hue='condition', cut=0, order=MdlTypes)
 
-plt.title('Across subject accuracy', fontsize=16)
+plt.title('Across subjects accuracy', fontsize=16)
 plt.ylabel('accuracy', fontsize=12)
 plt.xlabel('Feature set', fontsize=12)
 
 
 plt.tight_layout()
+
+
+
 
 #%%
 

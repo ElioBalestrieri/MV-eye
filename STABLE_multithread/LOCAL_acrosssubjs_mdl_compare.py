@@ -25,7 +25,9 @@ from mv_python_utils import cat_subjs_train_test
 #%% folder(s) definition & cond type
 
 #input folder 
-infold = '../STRG_computed_features/Mdl_comparison/'
+# infold = '../STRG_computed_features/Mdl_comparison/'
+infold = '../STRG_computed_features/rev_reply_MEG/'
+
 
 # output folder
 outfold = '../STRG_decoding_accuracy/'
@@ -56,8 +58,9 @@ rbf_svm = SVC(C=10, verbose=True)
 
 
 #%% models and conditions
-ExpConds = ['ECEO', 'VS']
-mdltypes = ['FullFFT', 'TimeFeats', 'FTM', 'FreqBands']
+ExpConds = ['ECEO'] # , 'VS']
+# mdltypes = ['FullFFT', 'TimeFeats', 'FTM', 'FreqBands']
+mdltypes = ['FreqBands', 'TimeFeats'] # , 'FreqBands', 'FullFFT']
 
 #%% non parallel part
 
@@ -76,10 +79,17 @@ for ThisExpCond in ExpConds:
         data_type = ThisExpCond + '_' + imdl
         fullX_train, fullX_test, Y_train, Y_test, subjID_trials_labels = cat_subjs_train_test(infold, strtsubj=0, endsubj=29, 
                                                                 ftype=data_type, tanh_flag=True, 
-                                                                compress_flag=True,
-                                                                pca_kept_var=.9)
+                                                                compress_flag=True)
+
+        # fullX_train, fullX_test, Y_train, Y_test, subjID_trials_labels = cat_subjs_train_test(infold, strtsubj=0, endsubj=29, 
+        #                                                         ftype=data_type, tanh_flag=True, 
+        #                                                         compress_flag=True,
+        #                                                         pca_kept_var=.9)
+
+
         
-        PC_list_names = newlist = list(filter(r.match, fullX_train.keys()))
+        # PC_list_names = newlist = list(filter(r.match, fullX_train.keys()))
+        PC_list_names = ['full_set']
         
         # preallocate matrix (if first iteration on the loop)
         mat_accs = np.empty((1, len(PC_list_names)))
@@ -106,9 +116,11 @@ for ThisExpCond in ExpConds:
             print(key)
                       
         DF = pd.DataFrame(data=mat_accs, columns=PC_list_names, index=[imdl])
-                  
+        print(imdl)
+        print(DF)          
+        
         # save
-        fname_out = outfold + 'AcrossSubjs_PC_' + ThisExpCond +  '_' + imdl + '.csv'
-        DF.to_csv(fname_out)
+        # fname_out = outfold + 'AcrossSubjs_PC_' + ThisExpCond +  '_' + imdl + '.csv'
+        # DF.to_csv(fname_out)
         
         

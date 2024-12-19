@@ -35,10 +35,13 @@ else
 end
 
 % all feats for all parcels, concatenated in one mat
-F.single_feats.fooof_aperiodic = cat(2, sngl_parc_feats{:});
+tmp_fullaperiodic = cat(2, sngl_parc_feats{:}); 
+F.single_feats.custom_offset = tmp_fullaperiodic(:, 2:2:length(sngl_parc_feats)*2);
+F.single_feats.custom_slope = tmp_fullaperiodic(:, 1:2:length(sngl_parc_feats)*2);
+
 
 % log runtime
-F.runtime.fooof_aperiodic = round(toc, 2);
+F.runtime.custom_aperiodic = round(toc, 2);
 
 
 end

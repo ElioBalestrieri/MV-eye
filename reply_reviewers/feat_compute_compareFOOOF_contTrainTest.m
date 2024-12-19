@@ -3,7 +3,6 @@ clearvars;
 close all
 clc
 
-
 %% path definition
 
 % input and packages
@@ -14,15 +13,17 @@ data_paths               = {'/remotedata/AgGross/Fasting/NC/resultsNC/visual_gam
 helper_functions_path   = '../helper_functions/';
 plotting_functions_path = '../plotting_functions';
 resources_path          = '../../Resources';
-catch22_path            = '../../Software/catch22/wrap_Matlab';
+catch22_path            = '/home/balestrieri/sciebo/Software/catch22/wrap_Matlab';
 
-out_feat_path          = '/remotedata/AgGross/TBraiC/MV-eye/STRG_computed_features/Mdl_comparison';
+out_feat_path          = '/remotedata/AgGross/TBraiC/MV-eye/STRG_computed_features/rev_reply_MEG/aperiodic_only';
+% tmp_out_feat_path = '/remotedata/AgGross/TBraiC/MV-eye/STRG_data/reconstruct_signal';
 if ~isfolder(out_feat_path); mkdir(out_feat_path); end
 
 addpath(helper_functions_path)
 addpath(plotting_functions_path); addpath(resources_path)
 addpath(catch22_path)
 addpath(fieldtrip_path); 
+
 
 %% loop into subjects
 
@@ -93,25 +94,17 @@ parfor isubj = 1:nsubjs
         Y=[ones(length(dat{1}.trial), 1); 2*ones(length(dat{2}.trial), 1)]';
 
         % original trial ordering
-        trl_order = [1:length(dat{1}.trial), 1:length(dat{2}.trial)]
+        trl_order = [1:length(dat{1}.trial), 1:length(dat{2}.trial)];
 
         % merge
         cfg = [];
         dat = ft_appenddata(cfg, dat{1}, dat{2});
-    
-        % shuffle
-        rng(1)
-        shffld_idxs = randperm(length(Y));
-        Y = Y(shffld_idxs);
-        trl_order = trl_order(shffld_idxs);
-        dat.trial = dat.trial(shffld_idxs);
 
         % scale up data  
         dat.trial = cellfun(@(x) x*1e11, dat.trial, 'UniformOutput',false);
 
         % loop through "theoretical" models
-        mdls_codes = {'FB_2M', 'FB_3M', 'FB_4M', 'FB_cherrypicked', ...
-                      'cherrypicked'};
+        mdls_codes = {'TimeFeats'};
 
         ntrials = length(dat.trial);
 
@@ -129,75 +122,20 @@ parfor isubj = 1:nsubjs
           
             switch mdl_name
 
-                case 'FB_2M'
-
-                    cfg_feats = mv_features_cfg_theoretical_freqbands();
-                    cfg_feats.time = {'mean', 'std'};
-                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
-
-                case 'FB_3M'
-
-                    cfg_feats = mv_features_cfg_theoretical_freqbands();
-                    cfg_feats.time = {'mean', 'std', 'skewness'};
-                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
-
-
-                case 'FB_4M'
-
-                    cfg_feats = mv_features_cfg_theoretical_freqbands();
-                    cfg_feats.time = {'mean', 'std', 'skewness', 'kurtosis'};
-                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
-
-                case 'FB_cherrypicked'
-
-                    cfg_feats = mv_features_cfg_theoretical_freqbands();
-                    cfg_feats.time = {'MCL', 'CO_HistogramAMI_even_2_5'};
-                    F = mv_features_moments_freqbands(cfg_feats, dat, F);
-
-
-                case 'cherrypicked'
-
-                    cfg_feats = mv_features_cfg();
-                    cfg_feats.time = {'MCL', 'CO_HistogramAMI_even_2_5'};
-                    F = mv_features_timedomain(cfg_feats, dat, F);
-
-
-                case 'timedomain_2M'
-
-                    % call for config
-                    cfg_feats = mv_features_cfg_FTM();
-                    F = mv_features_timedomain(cfg_feats, dat, F);
-
-                case 'FreqBands'
-
-                    % call for config
-                    cfg_feats = mv_features_cfg_theoretical_freqbands();
-                    F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);
-
-
-                case 'FullFFT'
-
-                    % call for config
-                    cfg_feats = mv_features_cfg();
-                    F = mv_features_freqdomain_nonrecursive(cfg_feats, dat, F);
-    
                 case 'TimeFeats'
 
                     % call for config
                     cfg_feats = mv_features_cfg();
-
-                    F = mv_features_timedomain(cfg_feats, dat, F);
-                    F = mv_wrap_catch22(cfg_feats, dat, F);
-                    F = mv_periodic_aperiodic(cfg_feats, dat, F);
+                    F = mv_periodic_aperiodic(cfg_feats, dat, F);                    
+                    F = mv_periodic_aperiodic_fooof(cfg_feats, dat, F);
 
             end
-
+    
             % append cfg for easy check the operations performed before
             F.cfg_feats = cfg_feats;
-
-
+    
             % save
-            fname_out_feat = [subjcode, '_' this_cond '_' mdl_name '.mat'];
+            fname_out_feat = [subjcode '_' this_cond '_' mdl_name '_FOOOFcompare.mat'];
             saveinparfor(fullfile(out_feat_path, fname_out_feat), F)
 
         end
