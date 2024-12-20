@@ -31,13 +31,3 @@ The sub-folder containing the functions that _perform computation_ and, even mor
 **plotting_functions**
 tools for visualization
 
-### sandboxes
-to try things out, either for feature generation or decoding. Two different sub-folders:
-
-**sandbox_** *
- - decode
- - features
-		
-### branching regulations
-At some point we might discuss whether to use different branches for different environments -HPC might need different cfg, for example-. For the time being, everything resides on main 
-
