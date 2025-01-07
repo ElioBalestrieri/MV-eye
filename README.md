@@ -1,5 +1,5 @@
 # MV-eye
-repo for MultiVariate EYEs closed/open. The manuscript is currently under revision. Here the [link](https://doi.org/10.1101/2024.04.17.589917) to the preprint.
+repo for MultiVariate EYEs closed/open. The manuscript is currently under revision, and as the reader knows, the analysis extended to the evaluation of another pait of brain states, namely baseline/Visual stimulation. Here the [link](https://doi.org/10.1101/2024.04.17.589917) to the preprint.
 
 ## introduction
 The repo contains code for features extraction from M-EEG data in different states. The input data (not on github) comes in a fieldtrip-like format. The workflow is in MATLAB, for features extraction, and python for classification.
